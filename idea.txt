@@ -1,0 +1,58 @@
+Word Agent is a creative writing project management program with integrated cloud collaboration tools.
+
+The program will be written primarily in Python with GTK+ v3.
+The program will have the following features:
+	1. Breaking large projects down to small pieces
+		Following the practice of modularization in programming,
+		the document will be managed by many small text files
+		(called "segments" for our purposes at this time) that are
+		linked together at time of document rendering.
+
+	2. Plainest plaintext for file encoding
+		The segments will be plain text files with no markup or formatting.
+		This will prevent vender lockin and compatibility problems.
+		Formatting and other considerations can then be handled by other
+		parts of the program, or used by external tools, at the user's option.
+
+	3. Distraction-free "Composition" mode
+		Modeled after FocusWriter and PyRoom, this feature is a fullscreen
+		"composition" mode that tries to keep the writing going. This
+		feature will have to get user imput on what works for them,
+		and perhaps this will support user-built plugins. The composition
+		tools may be things like timers, music, name generators, and other
+		things to keep things going
+
+	4. Autosave & Commit
+		This will be a bit of a change in how most word processors work.
+		While a segment is being edited, all changes are saved to an
+		autosave buffer. This will take care of undo functionality. This
+		approach takes too much space for long projects. So, when the work
+		is at an acceptible stage of revision (or work is stopping for the
+		session), the user commits the revisions. This would replace the
+		old "save" functionality, with the improvements that DVCS brings.
+		When this commit occurs, the delta file is made between commits,
+		and not from the autosave buffer. Once the commit is finalized,
+		the autosave buffer is flushed, and reinitizialed to empty.
+		Therefore, in this scheme, there should not be a "autocommit"
+		function. The only time that the commit should be prompted is
+		if the program is being closed, and the changes have not been
+		committed yet, just like with the "save" feature that we all
+		know and love.
+
+	5. WebRTC delta trade
+		This is where the cloud collaboration comes in. The collaboration
+		begins much like a chat room. Users connect to other live instances
+		of the program, and connect delta exchange datastreams. These deltas
+		are exchanged after a commit.
+
+	6. Section lockout
+		This feature will allow users to create and enforce file permissions
+		to prevent merge conflicts. Essentially, a segment is only writeable
+		to one user at a time. The program could feature a "scheduler" that
+		would pass the write-permission to users based on a list.
+
+	7. Visual Merge Conflict Resolution
+		In case of a merge conflict, the two files can be shown side by side
+		so that the users can negotiate how to solve the merge conflict.
+		Because this is creative writing, merge conflicts can be easier to solve
+		visually.
