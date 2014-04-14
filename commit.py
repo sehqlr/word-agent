@@ -28,16 +28,16 @@ class WAVersionControl:
 	"""A class for version control"""
 	vsdir = "/usr/bin/hg"
 	def init(self):
-		sub.call([self.vsdir, "init"])
+		sub.check_call([vsdir, "init"])
 	def commit(message = None):
 		if message is None:
-			sub.call([self.vsdir, "commit"])
+			sub.check_call([vsdir, "commit"])
 		else:
-			sub.call([self.vsdir, "commit", "-m", message])
-	def status(self):
-		sub.call([self.vsdir, "status"])
-	def log(self):
-		sub.call([self.vsdir, "log"])
+			sub.check_call([vsdir, "commit", "-m", message])
+	def status():
+		sub.check_call([vsdir, "status"])
+	def log():
+		sub.check_call([vsdir, "log"])
 
 if __name__ == "__main__":
 	print("Nothing to test at this time")

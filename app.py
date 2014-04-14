@@ -23,27 +23,36 @@
 #
 
 from gi.repository import Gtk
-import commit, functions
+import os
+import subprocess as sub
+import commit
 
-def launchWindow(self, window):
-	if type(window) is Gtk.Window:
-		win = builder.get_object(window)
-	else: win = None
-	return win
+builder = Gtk.Builder()
+wavcs = commit.WAVersionControl()
+
+def launchWindow(window=None):
+	win = builder.get_object(window)
+	win.show_all()
 
 def main():
-	path = '/home/sam/Development/word-agent'
+	srcPath = '/home/sam/Development/word-agent/'
+	usrPath = '/home/sam/Documents/testing/'
+
+	os.chdir(usrPath)
+
 	handlers = {
 		"gtk_main_quit": Gtk.main_quit,
 		"on_compositionButton_clicked": launchWindow("compositionWindow"),
-		"on_vcsButton_clicked": launchWindow("vcsWindow")
+		"on_vcsButton_clicked": launchWindow("vcsWindow"),
+		"on_initButton_clicked": wavcs.init,
+		"on_commitButton_clicked": wavcs.commit,
+		"on_statusButton_clicked": wavcs.status,
+		"on_logButton_clicked": wavcs.log,
 	}
 
 	builder = Gtk.Builder()
-	builder.add_from_file(path + "word-agent.glade")
+	builder.add_from_file(srcPath + "word-agent.glade")
 	builder.connect_signals(handlers)
-
-	wavc = WAVersionControl()
 
 	app = builder.get_object("mainWindow")
 	app.show_all()
