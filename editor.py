@@ -32,13 +32,17 @@ to a "autosave" file genenerated during runtime. When the user commits
 changes, this autosave file is not effected. The autosave file is temporary
 
 """
-## FIXME: jklsda;sjdskla;
 
 class AutoDiffBuffer:
 	"""A class for maintaining the auto-diff save/commit feature"""
 
-	__init__(self):
-		self.temp_file = None
+	def __init__(self, temp_file = None, text_buffer = None,
+				 text_content_curr = None, text_content_prev = None):
+		self.temp_file = temp_file
+
+	def
+		self._start = text_buffer.get_start_iter()
+		self._end = text_buffer.get_end_iter()
 
 	def open_temp_file(self):
 		self.temp_file = tempfile.NamedTemporaryFile(mode='w+')
@@ -48,6 +52,9 @@ class AutoDiffBuffer:
 			print("No text buffer specified.")
 		else:
 			self.text_buffer = text_buffer
+
+	def get_text_state(self)
+		return text_buffer.get_text(_start, _end)
 
 	def get_diff(self):
 		if self.text_buffer == None:
