@@ -34,41 +34,46 @@ changes, this autosave file is not effected. The autosave file is temporary
 """
 
 class AutoDiffBuffer:
-	"""A class for maintaining the auto-diff save/commit feature"""
+	"""A class for maintaining the autosave/diff feature"""
 
-	def __init__(self, temp_file = None, text_buffer = None,
-				 text_content_curr = None, text_content_prev = None):
-		self.temp_file = temp_file
+	def __init__(self, text_buffer = None):
 
-	def
-		self._start = text_buffer.get_start_iter()
-		self._end = text_buffer.get_end_iter()
+		self.text_buffer = text_buffer
+		self.ndiffer = difflib.Differ.ndiff()
+		self.restorer = difflib.Differ.restore()
+		self.save_buffer, self.redo_buffer = [], []
 
-	def open_temp_file(self):
-		self.temp_file = tempfile.NamedTemporaryFile(mode='w+')
-
-	def set_text_buffer(self, text_buffer=None):
-		if text_buffer == None:
-			print("No text buffer specified.")
-		else:
-			self.text_buffer = text_buffer
-
-	def get_text_state(self)
-		return text_buffer.get_text(_start, _end)
+	def get_text(self):
+		text_start = text_buffer.get_start_iter()
+		text_end = text_buffer.get_end_iter()
+		return self.text_buffer.get_text(text_start, text_end)
 
 	def get_diff(self):
-		if self.text_buffer == None:
-			print("Call method 'set_text_buffer' first.")
+		if isinstance(save_buffer[-1], str):
+			if isinstance(save_buffer[-2], str):
+				first_str = save_buffer.pop()
+				second_str = save_buffer.pop()
+				return self.ndiffer(first_str, second_str)
+		return
+
+	def save_text(self):
+		delta = get_diff())
+		if delta is None:
+			save_buffer.append(get_text())
 		else:
+			save_buffer.append(delta)
+		redo_buffer.clear()
+		print("Text Saved!")
+
+	def restore_undo(self):
+		# the idea behind this one is to use the restore method
+		# to travel back through the deltas. This will also populate the
+		# redo list. If you notice above, the redo list gets cleared
+		# when the user is making a new save.
 
 
-
-
-
-
+class FileDiffBuffer:
+	"""Brings the autosave/diff buffer into a file for longer storage"""
 
 if __name__ == "__main__":
-	builder = Gtk.Builder()
-	builder.add_from_file("word-agent.glade")
 
-	text_buffer = Gtk.TextBuffer()
