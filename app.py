@@ -22,23 +22,21 @@
 #
 #
 
-from gi.repository import Gtk
 import os
 import subprocess as sub
 import commit
+from gi.repository import Gtk
+from builder import AppBuilder
 
-builder = Gtk.Builder()
 wavcs = commit.WAVersionControl()
 
 def launchWindow(window=None):
 	win = builder.get_object(window)
-	win.show_all()
+	win.show()
 
 def main():
-	srcPath = '/home/sam/Development/word-agent/'
-	usrPath = '/home/sam/Documents/testing/'
 
-	os.chdir(usrPath)
+	os.chdir(builder.getUsrPath)
 
 	handlers = {
 		"gtk_main_quit": Gtk.main_quit,
@@ -50,8 +48,8 @@ def main():
 		"on_logButton_clicked": wavcs.log,
 	}
 
-	builder = Gtk.Builder()
-	builder.add_from_file(srcPath + "word-agent.glade")
+	builder.AppBuilder.new()
+	builder.add_from_file(builder.mainWindowFile)
 	builder.connect_signals(handlers)
 
 	app = builder.get_object("mainWindow")
