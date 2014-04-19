@@ -28,15 +28,34 @@ from gi.repository import Gtk
 from builder import AppBuilder
 from editor import AutoDiffBuffer
 
-def text_buffer_modified(self, diffBuffer):
-	print("Preedit text sent to buffer")
-	diffBuffer.save_edit()
+class WordAgentMainApp:
 
-def print_preedit_signal(self):
-	print("Preedit text signal sent")
+	def __init__(self, text_buffer, diff_buffer):
+		self.sig_msg = "Signal recieved: "
+		self.text_buffer = text_buffer
+		self.diff_buffer = diff_buffer
 
-class WordAgentApp:
-	self
+	def signal_message(self, signal):
+		print(self.sig_msg + signal)
+
+	def gtk_main_quit(self):
+		signal_message("gtk_main_quit")
+		Gtk.main_quit()
+
+	def	on_segmentBuffer_modified_changed(self):
+		signal_message("on_segmentBuffer_modified_changed")
+		self.diff_buffer.save_edit()
+
+	def on_undoButton_clicked(self):
+		signal_message("on_undoButton_clicked")
+		self.diff_buffer.undo_edit()
+
+	def	on_redoButton_clicked(self):
+		signal_message("on_redoButton_clicked")
+		self.diff_buffer.redo_edit()
+
+	def	on_editorTextBox_preedit_changed(self):
+		signal_message("on_editorTextBox_preedit_changed")
 
 def main():
 
@@ -47,22 +66,12 @@ def main():
 	textView = builder.get_object("editorTextBox")
 	diffBuffer = AutoDiffBuffer(textBuffer)
 
-	app = builder.get_object("mainWindow")
+	mainWindow = builder.get_object("mainWindow")
 
 	os.chdir(builder.getUsrPath())
 
-	handlers = {
-		"gtk_main_quit": Gtk.main_quit,
-		"on_segmentBuffer_modified_changed": text_buffer_modified,
-		"on_undoButton_clicked": diffBuffer.undo_edit,
-		"on_redoButton_clicked": diffBuffer.redo_edit,
-		"on_editorTextBox_preedit_changed": print_preedit_signal,
-	}
-
-
 	builder.connect_signals(handlers)
-	app.show_all()
-	app.maximize()
+	mainWindow.show()
 
 	Gtk.main()
 	return 0
