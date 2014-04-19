@@ -183,15 +183,15 @@
             <property name="spacing">2</property>
             <property name="layout_style">center</property>
             <child>
-              <object class="GtkButton" id="compositionButton">
-                <property name="label">gtk-fullscreen</property>
+              <object class="GtkButton" id="undoButton">
+                <property name="label">gtk-undo</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_stock">True</property>
                 <property name="image_position">bottom</property>
                 <property name="always_show_image">True</property>
-                <signal name="clicked" handler="on_compositionButton_clicked" swapped="no"/>
+                <signal name="clicked" handler="on_undoButton_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -200,14 +200,15 @@
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="vcsButton">
-                <property name="label">Commit</property>
+              <object class="GtkButton" id="redoButton">
+                <property name="label">gtk-redo</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
                 <property name="image_position">bottom</property>
                 <property name="always_show_image">True</property>
-                <signal name="clicked" handler="on_vcsButton_clicked" swapped="no"/>
+                <signal name="clicked" handler="on_redoButton_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -277,6 +278,7 @@
                 <property name="vexpand">True</property>
                 <property name="wrap_mode">word</property>
                 <property name="buffer">segmentBuffer</property>
+                <signal name="preedit-changed" handler="on_editorTextBox_preedit_changed" swapped="no"/>
               </object>
             </child>
           </object>
@@ -291,5 +293,6 @@
   </object>
   <object class="GtkTextBuffer" id="segmentBuffer">
     <property name="text" translatable="yes">Here is some sample text.</property>
+    <signal name="modified-changed" handler="on_segmentBuffer_modified_changed" swapped="no"/>
   </object>
 </interface>

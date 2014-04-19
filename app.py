@@ -24,35 +24,43 @@
 
 import os
 import subprocess as sub
-import commit
 from gi.repository import Gtk
 from builder import AppBuilder
+from editor import AutoDiffBuffer
 
-wavcs = commit.WAVersionControl()
+def text_buffer_modified(self, diffBuffer):
+	print("Preedit text sent to buffer")
+	diffBuffer.save_edit()
 
-def launchWindow(window=None):
-	win = builder.get_object(window)
-	win.show()
+def print_preedit_signal(self):
+	print("Preedit text signal sent")
+
+class WordAgentApp:
+	self
 
 def main():
 
-	os.chdir(builder.getUsrPath)
+	builder = AppBuilder()
+	builder.add_from_file(builder.mainWindowFile)
+
+	textBuffer = builder.get_object("segmentBuffer")
+	textView = builder.get_object("editorTextBox")
+	diffBuffer = AutoDiffBuffer(textBuffer)
+
+	app = builder.get_object("mainWindow")
+
+	os.chdir(builder.getUsrPath())
 
 	handlers = {
 		"gtk_main_quit": Gtk.main_quit,
-		"on_compositionButton_clicked": launchWindow("compositionWindow"),
-		"on_vcsButton_clicked": launchWindow("vcsWindow"),
-		"on_initButton_clicked": wavcs.init,
-		"on_commitButton_clicked": wavcs.commit,
-		"on_statusButton_clicked": wavcs.status,
-		"on_logButton_clicked": wavcs.log,
+		"on_segmentBuffer_modified_changed": text_buffer_modified,
+		"on_undoButton_clicked": diffBuffer.undo_edit,
+		"on_redoButton_clicked": diffBuffer.redo_edit,
+		"on_editorTextBox_preedit_changed": print_preedit_signal,
 	}
 
-	builder.AppBuilder.new()
-	builder.add_from_file(builder.mainWindowFile)
-	builder.connect_signals(handlers)
 
-	app = builder.get_object("mainWindow")
+	builder.connect_signals(handlers)
 	app.show_all()
 	app.maximize()
 
