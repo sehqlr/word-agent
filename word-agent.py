@@ -5,39 +5,8 @@ import tempfile
 import difflib
 from gi.repository import Gtk
 
-class Builder(Gtk.Window):
-	"""Houses handler calls and other things"""
-
-	def __init__(self):
-		Gtk.Window.__init__(self, title="Word Agent")
-		self.sig_msg = "Signal recieved: "
-		self.src_path = "/home/sam/Development/word-agent/"
-		self.usr_path = "/home/sam/Documents/testing/"
-		self.main_window_file = self.src_path + "WordAgentApp.glade"
-
-	def signal_message(self, signal):
-		print(self.sig_msg + signal)
-
-	def set_interface(self):
-		self.builder = Gtk.Builder()
-		self.builder.add_from_file(self.main_window_file)
-		print("Interface initialized")
-
-	def set_signals(self, handler):
-		self.builder.connect_signals(handler)
-		print("Signals initialized")
-
-	def set_main_window(self):
-		self.main_window = self.builder.get_object("mainWindow")
-		print("Main Window initialized")
-
-	def set_buffers(self):
-		self.text_buffer = self.builder.get_object("segmentBuffer")
-		self.diff_buffer = AutoDiffBuffer(self.text_buffer)
-		print("Buffers initialized")
-
-
-class AppHandler:
+class WordAgent_Handler:
+	"""Handles signals from user events"""
 
 	def gtk_main_quit(self, *args):
 		Gtk.main_quit(*args)
@@ -55,8 +24,8 @@ class AppHandler:
 		print("Preedit Signal")
 
 
-class AutoDiffBuffer:
-	"""A class for maintaining the autosave/diff feature"""
+class WordAgent_DiffBuffer:
+	"""Maintains the autosave/diff feature"""
 
 	def __init__(self, text_buffer = None):
 
@@ -113,24 +82,25 @@ class AutoDiffBuffer:
 		print("Redo complete")
 
 
-class FileDiffBuffer:
-	"""Brings the autosave/diff buffer into a file for longer storage"""
+class FileIO:
+	"""The class for saving files"""
 	pass
 
 
-def main(self):
+def main():
 	print("Running as main")
-	mainApp = MainApp()
-	mainApp.set_interface()
-	mainApp.set_signals(AppHandlerandler())
-	mainApp.set_buffers()
-	mainApp.set_main_window()
+	bob = Gtk.Builder()
+	bob.add_from_file("WordAgentApp.glade")
+	txt = bob.get_object("segmentBuffer")
+	win = bob.get_object("mainWindow")
+	diff = WordAgent_DiffBuffer()
+	bob.connect_signals(WordAgent_Handler())
 
-	os.chdir(mainApp.usr_path)
-	print("Changed working directory to " + mainApp.usr_path)
+	os.chdir(bob.usr_path)
+	print("Changed working directory to " + bob.usr_path)
 
-	mainApp.main_window.show()
 	print("Showing main window")
+	win.show_all()
 
 	print("Calling Gtk.main")
 	Gtk.main()
