@@ -24,7 +24,7 @@ win = bob.get_object("mainWindow")
 print(win)
 
 print("Init differ and file_clerk")
-diff = Differ(txt_bf)
+diff = Differ()
 clrk = FileClerk()
 print(diff)
 print(clrk)

@@ -14,7 +14,7 @@ txt_bx.set_buffer(txt_bf)
 
 win = bob.get_object("mainWindow")
 
-diff = Differ(txt_bf)
+diff = Differ()
 clrk = FileClerk()
 bob.connect_signals(Handler(txt_bf, diff, clrk))
 

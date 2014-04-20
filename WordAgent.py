@@ -28,6 +28,7 @@ class Handler:
 	def on_saveButton_clicked(self, widget):
 		self.segment_buffer.save_edit(self.differ)
 
+
 class Buffer(Gtk.TextBuffer):
 	"""Extends text buffer to include version lists"""
 	def __init__(self):
@@ -36,21 +37,22 @@ class Buffer(Gtk.TextBuffer):
 		self.redos = []
 		self.saves = []
 
-		self.string = """
-		Welcome to the Word Agent, the novel project management app!
+		self.message = """
+	Welcome to the Word Agent, the novel project management app!
 
-		Features currently in development:
-			Undo/Redo
-			File IO
+	Features currently in development:
+		Undo/Redo
+		File IO
 
-		Next Feature in the works:
-			Project management
+	Next Feature in the works:
+		Project management
+		"Post Production" formatting (Scribus integration?)
 
-		Future Features:
-			Version Control System integration
-			Cloud Collaboration with WebRTC
+	Future Features:
+		Version Control System integration
+		Cloud Collaboration with WebRTC
 """
-		self.text = self.set_text(self.string, len(self.string))
+		self.text = self.set_text(self.message, len(self.message))
 		self.add_save()
 
 	def add_save(self):
@@ -85,8 +87,8 @@ class Buffer(Gtk.TextBuffer):
 			self.add_save()
 
 		else:
-			differ.set_matcher(older= self.text, newer= self.saves[-1])
-			ratio = differ.matcher_quick_ratio()
+			differ.set_seqs(self.text, self.saves[-1])
+			ratio = differ.quick_ratio()
 
 			if ratio is not 1.0:
 				self.add_save()
@@ -101,31 +103,22 @@ class Buffer(Gtk.TextBuffer):
 		redo = self.deque_redo()
 		self.text = redo
 
-class Differ:
-	"""Generates deltas using diff functions"""
-	def __init__(self, older='', newer=''):
+class Differ(difflib.SequenceMatcher):
+	"""Generates deltas and compares strings with difflib"""
+	def __init__(self):
+		difflib.SequenceMatcher.__init__(self)
 		self.ndiff = difflib.ndiff
 		self.restore = difflib.restore
-		self.set_matcher(older, newer)
-
-	def set_matcher(self, older='', newer=''):
-		"""Matcher helps with string comparisons in the Buffer"""
-		try:
-			self.matcher = difflib.SequenceMatcher(None, older, newer)
-		except TypeError:
-			print("set_matcher inputs must be strings.")
-
-	def matcher_quick_ratio(self):
-		return self.matcher.quick_ratio()
 
 	def generate_diff(self, older='', newer=''):
 		try:
 			return self.ndiff(newer, older)
 		except TypeError:
-			print("generate_diff inputs must be strings.")
+			print("generate_diff inputs must be strings")
 
 	def restore_diff(self, diff, which):
 		return ''.join(self.restore(diff, which))
+
 
 
 class FileClerk:
