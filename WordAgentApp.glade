@@ -12,7 +12,6 @@
     <property name="title" translatable="yes">Word Agent</property>
     <property name="window_position">center</property>
     <signal name="destroy" handler="gtk_main_quit" swapped="no"/>
-    <signal name="delete-event" handler="gtk_main_quit" swapped="no"/>
     <child>
       <object class="GtkBox" id="box1">
         <property name="visible">True</property>
@@ -39,7 +38,6 @@
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="fileNew_activate_cb" swapped="no"/>
                       </object>
                     </child>
                     <child>
