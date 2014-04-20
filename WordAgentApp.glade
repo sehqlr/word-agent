@@ -215,14 +215,15 @@
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="cloudButton">
-                <property name="label">gtk-network</property>
+              <object class="GtkButton" id="saveButton">
+                <property name="label">gtk-save</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_stock">True</property>
                 <property name="image_position">bottom</property>
                 <property name="always_show_image">True</property>
+                <signal name="clicked" handler="on_saveButton_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
