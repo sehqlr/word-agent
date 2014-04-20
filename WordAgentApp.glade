@@ -276,8 +276,6 @@
                 <property name="hexpand">True</property>
                 <property name="vexpand">True</property>
                 <property name="wrap_mode">word</property>
-                <property name="buffer">segmentBuffer</property>
-                <signal name="preedit-changed" handler="on_editorTextBox_preedit_changed" swapped="no"/>
               </object>
             </child>
           </object>
@@ -289,9 +287,5 @@
         </child>
       </object>
     </child>
-  </object>
-  <object class="GtkTextBuffer" id="segmentBuffer">
-    <property name="text" translatable="yes">Here is some sample text.</property>
-    <signal name="modified-changed" handler="on_segmentBuffer_modified_changed" swapped="no"/>
   </object>
 </interface>
