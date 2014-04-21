@@ -23,4 +23,4 @@ Other features could include Segment Lock Scheduler (people can access certain f
 WebRTC Conferencing (for discussion among collaborators), and Visual Merge Conflict Resolution (basically, drag and drop)
 
 I'm planning on making this a long term project after CS50x is over, because I participate in NaNoWriMo and do other
-writings, and I like to collaborate with others online on creative projects. 
+writings, and I like to collaborate with others online on creative projects. More details are in the idea.txt.
