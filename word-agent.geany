@@ -1,12 +1,12 @@
 [file_prefs]
 final_new_line=true
-ensure_convert_new_lines=false
+ensure_convert_new_lines=true
 strip_trailing_spaces=true
-replace_tabs=false
+replace_tabs=true
 
 [indentation]
 indent_width=4
-indent_type=1
+indent_type=0
 indent_hard_tab_width=8
 detect_indent=false
 detect_indent_width=false
@@ -23,12 +23,15 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=2
+current_page=7
 FILE_NAME_0=2983;None;0;EUTF-8;1;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2Fidea.txt;0;4
-FILE_NAME_1=0;None;0;EUTF-8;1;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2Fword-agent-project;0;4
-FILE_NAME_2=1289;Python;0;EUTF-8;1;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2Fcommit.py;0;4
-FILE_NAME_3=1025;Python;0;EUTF-8;1;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2Fapp.py;0;4
-FILE_NAME_4=994;Python;0;EUTF-8;1;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2Fbuilder.py;0;4
+FILE_NAME_1=0;Python;0;EUTF-8;1;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2Fcloud.py;0;4
+FILE_NAME_2=0;None;0;EUTF-8;1;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2Fdebug.txt;0;4
+FILE_NAME_3=0;Markdown;0;EUTF-8;1;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2FREADME.md;0;4
+FILE_NAME_4=0;Python;0;EUTF-8;1;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2Frun.py;0;4
+FILE_NAME_5=0;Python;0;EUTF-8;1;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2Ftest_edits.py;0;4
+FILE_NAME_6=0;Python;0;EUTF-8;1;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2Ftest_init.py;0;4
+FILE_NAME_7=0;Python;0;EUTF-8;1;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2FWordAgent.py;0;4
 
 [VTE]
 last_dir=/home/sam/Development/word-agent
