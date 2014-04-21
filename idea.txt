@@ -1,6 +1,8 @@
 Word Agent is a creative writing project management program with integrated cloud collaboration tools.
 
 The program will be written primarily in Python with GTK+ v3.
+I'm still deciding if I want the program to be permissive or GPL.
+
 The program will have the following features:
 	1. Breaking large projects down to small pieces
 		Following the practice of modularization in programming,
