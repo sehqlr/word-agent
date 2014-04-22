@@ -5,11 +5,11 @@ import tempfile
 import difflib
 from gi.repository import Gtk
 
-class Handler:
+class SignalHandler:
     """Handles signals from user events"""
 
-    def __init__(self, seg_buffer, differ, file_clerk):
-        self.seg_buffer = seg_buffer
+    def __init__(self, seg_bfr, differ, file_clerk):
+        self.seg_bfr = seg_bfr
         self.differ = differ
         self.file_clerk = file_clerk
 
@@ -17,16 +17,20 @@ class Handler:
         Gtk.main_quit(*args)
 
     def on_segmentBuffer_modified_changed(self, widget):
-        self.seg_buffer.save_edit(self.differ)
+        seq1 = self.seg_bfr.saves[-1]
+        seq2 = self.seg_bfr.props.text
+        ratio_changed = self.differ.diff_ratio(seq1, seq2)
+        if ratio_changed < 1.0:
+            self.seg_bfr.save_edit(self.differ)
 
     def on_undoButton_clicked(self, widget):
-        self.seg_buffer.undo_edit()
+        self.seg_bfr.undo_edit()
 
     def on_redoButton_clicked(self, widget):
-        self.seg_buffer.redo_edit()
+        self.seg_bfr.redo_edit()
 
     def on_saveButton_clicked(self, widget):
-        self.seg_buffer.save_edit(self.differ)
+        self.seg_bfr.save_edit(self.differ)
 
 
 class SegmentBuffer(Gtk.TextBuffer):
@@ -36,37 +40,28 @@ class SegmentBuffer(Gtk.TextBuffer):
         self.diffs = []
         self.redos = []
         self.saves = []
+
         self.segment = segment
+        self.set_text(self.segment, len(self.segment))
+        self.add_bf(self.saves, self.props.text)
 
-        self.text = self.set_text(self.segment, len(self.segment))
-        self.add_bf(self.saves, self.text)
+    def add_bf(self, buffer_name, element):
+        buffer_name.append(element)
 
-    def add_bf(self, buffer, element):
-        buffer.append(element)
+    def pop_bf(self, buffer_name, index= -1):
+        return buffer_name.pop(index)
 
-    def pop_bf(self, buffer, index= -1):
-        return buffer.pop(index)
-
-    def get_diff(self, differ, str1, str2):
-        return differ.ndiff(str1, str2)
-
-    def save_edit(self, differ):
-        """Handles the AutoSave Feature"""
-        self.add_bf(self.saves, self.text)
-        if len(self.saves) >= 2:
-            differ.set_seqs(self.text, self.saves[-1])
-            ratio = differ.quick_ratio()
-            if ratio is not 1.0:
-                self.add_bf(saves, self.text)
-                self.redos.clear()
+    def save_edit(self, text):
+        self.add_bf(self.saves, text)
+        self.redos.clear()
 
     def undo_edit(self):
-        self.add_bf(self.saves, self.text)
-        self.text = self.saves[-1]
+        self.add_bf(self.saves, self.props.text)
+        self.set_text(self.saves[-1], len(self.saves[-1]))
 
     def redo_edit(self):
-        self.add_bf(self.saves, self.text)
-        self.text = self.pop_bf(self.redos)
+        self.add_bf(self.saves, self.props.text)
+        self.self.pop_bf(self.redos)
 
 
 class Differ(difflib.SequenceMatcher):
@@ -78,6 +73,10 @@ class Differ(difflib.SequenceMatcher):
 
     def restore_diff(self, diff, which):
         return ''.join(self.restore(diff, which))
+
+    def diff_ratio(self, seq1, seq2):
+        self.set_seqs(seq1, seq2)
+        return self.quick_ratio()
 
 
 class FileClerk:

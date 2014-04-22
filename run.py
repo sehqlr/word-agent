@@ -32,7 +32,7 @@ win = bob.get_object("mainWindow")
 
 diff = Differ()
 clrk = FileClerk()
-bob.connect_signals(Handler(seg_bf, diff, clrk))
+bob.connect_signals(SignalHandler(seg_bf, diff, clrk))
 
 win.show_all()
 Gtk.main()

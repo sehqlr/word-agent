@@ -7,18 +7,38 @@ from WordAgent import *
 
 print("Begin editing testing suite")
 
-print("Init Gtk.Builder as bob; adding UI file")
-bob = Gtk.Builder()
-bob.add_from_file("WordAgentApp.glade")
-print(bob)
+edits = ["I'm a different starting buffer",
+"I've changed the buffer",
+"I'm going to write a story",
+"Once upon a time...",
+"Once upone a time, in a land far far away...",
+"Macabre murder mysteries make more money.",
+"Macabre murder mysteries make much more money!",
+"Macabre murder mysteries make much more money!"]
 
-print("Init text buffer object")
-txt_bf = Buffer()
-print(txt_bf)
+seg_bfr = SegmentBuffer()
+print("Initialized {}".format(seg_bfr))
 
-print("Init differ")
 diff = Differ()
-print(diff)
+print("Initialized {}".format(diff))
 
-print("Showing text buffer text property")
-print(txt_bf.text)
+clerk = FileClerk()
+
+signal = SignalHandler(seg_bfr, diff, clerk)
+print("Initialized {}".format(signal))
+
+print("Starting to loop through edits.")
+edits = enumerate(edits)
+for e in edits:
+    num, txt = e
+    print("LOOP #{}: ".format(num))
+    print("Text of edit: {}".format(txt))
+    print("BEFORE: seg_bfr.prop.text is {}".format(seg_bfr.props.text))
+    print("BEFORE: seg_bfr.saves is {}".format(seg_bfr.saves))
+    print("Saving edit")
+    seg_bfr.set_text(txt, len(txt))
+    #~ ratio = diff.set_seqs(txt, seg_bfr.props.text)
+    #~ print("Sequence Matcher quick_ratio: {}".format(ratio))
+    signal.on_segmentBuffer_modified_changed(signal.seg_bfr)
+    print("AFTER: seg_bfr.prop.text is {}".format(seg_bfr.props.text))
+    print("AFTER: seg_bfr.saves is {}".format(seg_bfr.saves))

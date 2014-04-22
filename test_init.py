@@ -30,6 +30,4 @@ print(diff)
 print(clrk)
 
 print("Connecting signals from Handler")
-bob.connect_signals(Handler(txt_bf, diff, clrk))
-print(Handler)
-
+bob.connect_signals(SignalHandler(txt_bf, diff, clrk))
