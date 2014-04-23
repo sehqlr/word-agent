@@ -41,8 +41,8 @@ for e in edits:
     diff.set_seqs(txt, seg_bfr.copy)
     ratio = diff.quick_ratio()
     print("diff.quick_ratio between txt and seg_bfr.copy: ", ratio)
-    print("Setting seg_bfr.copy to text of edit")
+    print("Backup copy to undos; Setting seg_bfr.copy to text of edit")
+    seg_bfr.add_bf(seg_bfr.undos, seg_bfr.copy)
     seg_bfr.copy = txt
-
     print("seg_bfr.copy is now", seg_bfr.copy)
     print("seg_bfr.undos is now", seg_bfr.undos)

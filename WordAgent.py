@@ -13,7 +13,8 @@ class SignalHandler:
                     "fclerk": file_clerk}
 
         # adding custom signals here
-        self.objs["buffer"].connect("changed", self.on_buffer_changed)
+        self.id_changed = self.objs["buffer"].connect("changed",
+                                                 self.on_buffer_changed)
 
     def gtk_main_quit(self, *args):
         print("SIGNAL: gtk_main_quit")
@@ -21,7 +22,7 @@ class SignalHandler:
 
     def on_buffer_changed(self, widget):
         """Custom signal for SegmentBuffer class"""
-        print("SIGNAL: on_buffer_changed")
+        print("SIGNAL: buffer_changed")
         bfr = self.objs["buffer"]
         dfr = self.objs["differ"]
         ratio_changed = dfr.diff_ratio(bfr.copy, bfr.undos[-1])
@@ -30,11 +31,13 @@ class SignalHandler:
 
     def on_undoButton_clicked(self, widget):
         print("SIGNAL: on_undoButton_clicked")
-        self.objs["buffer"].undo_edit()
+        with self.objs["buffer"].handler_block(self.id_changed):
+            self.objs["buffer"].undo_edit()
 
     def on_redoButton_clicked(self, widget):
         print("SIGNAL: on_redoButton_clicked")
-        self.objs["buffer"].redo_edit()
+        with self.objs["buffer"].handler_block(self.id_changed):
+            self.objs["buffer"].redo_edit()
 
 
 class SegmentBuffer(Gtk.TextBuffer):
@@ -61,6 +64,7 @@ class SegmentBuffer(Gtk.TextBuffer):
         self.copy = self.props.text
 
     def save_edit(self):
+        self.add_bf(self.undos, self.copy)
         self.copy_text()
         self.redos.clear()
 
