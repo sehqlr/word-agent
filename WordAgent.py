@@ -11,28 +11,29 @@ class SignalHandler:
         self.objs = {"buffer": segment_buffer,
                     "differ": differ,
                     "fclerk": file_clerk}
+
         # adding custom signals here
-        self.objs["buffer"].connect("changed",
-                                    self.on_segmentBuffer_changed)
+        self.objs["buffer"].connect("changed", self.on_buffer_changed)
 
     def gtk_main_quit(self, *args):
+        print("SIGNAL: gtk_main_quit")
         Gtk.main_quit(*args)
 
-    def on_editView_preedit_changed(self, widget):
-        print("editView preedit changed")
-
-    def on_segmentBuffer_changed(self, widget):
+    def on_buffer_changed(self, widget):
+        """Custom signal for SegmentBuffer class"""
+        print("SIGNAL: on_buffer_changed")
         bfr = self.objs["buffer"]
         dfr = self.objs["differ"]
         ratio_changed = dfr.diff_ratio(bfr.copy, bfr.undos[-1])
         if ratio_changed < 1.0:
             bfr.save_edit()
 
-
     def on_undoButton_clicked(self, widget):
+        print("SIGNAL: on_undoButton_clicked")
         self.objs["buffer"].undo_edit()
 
     def on_redoButton_clicked(self, widget):
+        print("SIGNAL: on_redoButton_clicked")
         self.objs["buffer"].redo_edit()
 
 

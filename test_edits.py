@@ -7,6 +7,8 @@ from WordAgent import *
 
 print("Begin editing testing suite")
 
+init_msg = "Initialized "
+
 edits = ["I'm a different starting buffer",
 "I've changed the buffer",
 "I'm going to write a story",
@@ -17,30 +19,30 @@ edits = ["I'm a different starting buffer",
 "Macabre murder mysteries make much more money!"]
 
 seg_bfr = SegmentBuffer()
-print("Initialized {}".format(seg_bfr))
+print(init_msg, seg_bfr)
 
 diff = SequenceDiffer()
-print("Initialized {}".format(diff))
+print(init_msg, diff)
 
 clerk = FileClerk()
-print("Initialized {}".format(clerk))
+print(init_msg, clerk)
 
 signal = SignalHandler(seg_bfr, diff, clerk)
-print("Initialized {}".format(signal))
+print(init_msg, signal)
 
-print("Starting to loop through edits.")
+print("Starting to loop through edits, no undo or redos here")
 edits = enumerate(edits)
 for e in edits:
     num, txt = e
-    print("LOOP #{}: ".format(num))
-    print("Text of edit: {}".format(txt))
-    print("BEFORE: seg_bfr.copy is {}".format(seg_bfr.copy))
-    print("BEFORE: seg_bfr.undos is {}".format(seg_bfr.undos))
-    print("BEFORE: seg_bfr.redos is {}".format(seg_bfr.redos))
-    print("Saving edit to save buffer")
-    seg_bfr.set_text(txt, len(txt))
-    #~ ratio = diff.set_seqs(txt, seg_bfr.props.text)
-    #~ print("Sequence Matcher quick_ratio: {}".format(ratio))
-    signal.on_segmentBuffer_modified_changed()
-    print("AFTER: seg_bfr.curr is {}".format(seg_bfr.copy))
-    print("AFTER: seg_bfr.undos is {}".format(seg_bfr.undos))
+    print("Loop #", num, "-----")
+    print("Current edit: ", txt)
+    print("seg_bfr.copy is ", seg_bfr.copy)
+    print("seg_bfr.undos is ", seg_bfr.undos)
+    diff.set_seqs(txt, seg_bfr.copy)
+    ratio = diff.quick_ratio()
+    print("diff.quick_ratio between txt and seg_bfr.copy: ", ratio)
+    print("Setting seg_bfr.copy to text of edit")
+    seg_bfr.copy = txt
+
+    print("seg_bfr.copy is now", seg_bfr.copy)
+    print("seg_bfr.undos is now", seg_bfr.undos)
