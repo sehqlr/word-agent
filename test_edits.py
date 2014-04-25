@@ -19,10 +19,11 @@ edits = ["I'm a different starting buffer",
 seg_bfr = SegmentBuffer()
 print("Initialized {}".format(seg_bfr))
 
-diff = Differ()
+diff = SequenceDiffer()
 print("Initialized {}".format(diff))
 
 clerk = FileClerk()
+print("Initialized {}".format(clerk))
 
 signal = SignalHandler(seg_bfr, diff, clerk)
 print("Initialized {}".format(signal))
@@ -33,12 +34,13 @@ for e in edits:
     num, txt = e
     print("LOOP #{}: ".format(num))
     print("Text of edit: {}".format(txt))
-    print("BEFORE: seg_bfr.prop.text is {}".format(seg_bfr.props.text))
-    print("BEFORE: seg_bfr.saves is {}".format(seg_bfr.saves))
-    print("Saving edit")
+    print("BEFORE: seg_bfr.copy is {}".format(seg_bfr.copy))
+    print("BEFORE: seg_bfr.undos is {}".format(seg_bfr.undos))
+    print("BEFORE: seg_bfr.redos is {}".format(seg_bfr.redos))
+    print("Saving edit to save buffer")
     seg_bfr.set_text(txt, len(txt))
     #~ ratio = diff.set_seqs(txt, seg_bfr.props.text)
     #~ print("Sequence Matcher quick_ratio: {}".format(ratio))
-    signal.on_segmentBuffer_modified_changed(signal.seg_bfr)
-    print("AFTER: seg_bfr.prop.text is {}".format(seg_bfr.props.text))
-    print("AFTER: seg_bfr.saves is {}".format(seg_bfr.saves))
+    signal.on_segmentBuffer_modified_changed()
+    print("AFTER: seg_bfr.curr is {}".format(seg_bfr.copy))
+    print("AFTER: seg_bfr.undos is {}".format(seg_bfr.undos))

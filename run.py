@@ -24,15 +24,15 @@ welcome_message = """
 bob = Gtk.Builder()
 bob.add_from_file("WordAgentApp.glade")
 
-seg_bf = SegmentBuffer(welcome_message)
-txt_bx = bob.get_object("editorTextBox")
-txt_bx.set_buffer(seg_bf)
+seg_bfr = SegmentBuffer(welcome_message)
+txt_box = bob.get_object("editView")
+txt_box.set_buffer(seg_bfr)
 
 win = bob.get_object("mainWindow")
-
-diff = Differ()
+diff = SequenceDiffer()
 clrk = FileClerk()
-bob.connect_signals(SignalHandler(seg_bf, diff, clrk))
+
+bob.connect_signals(SignalHandler(seg_bfr, diff, clrk))
 
 win.show_all()
 Gtk.main()
