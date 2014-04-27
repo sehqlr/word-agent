@@ -1,43 +1,40 @@
 #!/usr/bin/env python3
 
-import os
-import tempfile
-import difflib
+import io
+from collections import deque
+from difflib import SequenceMatcher, ndiff, restore
 from gi.repository import Gtk
 
 class SignalHandler:
     """Handles signals from user events"""
-    def __init__(self, segment_buffer, differ, file_clerk):
-        self.objs = {"buffer": segment_buffer,
-                    "differ": differ,
-                    "fclerk": file_clerk}
+    def __init__(self, segment_buffer):
+        self.bfr = segment_buffer
 
         # adding custom signals here
-        self.id_changed = self.objs["buffer"].connect("changed",
-                                                 self.on_buffer_changed)
+        self.id_chngd = self.bfr.connect("changed", self.buffer_changed)
 
     def gtk_main_quit(self, *args):
         print("SIGNAL: gtk_main_quit")
         Gtk.main_quit(*args)
 
-    def on_buffer_changed(self, widget):
+    def buffer_changed(self, widget):
         """Custom signal for SegmentBuffer class"""
         print("SIGNAL: buffer_changed")
-        bfr = self.objs["buffer"]
-        dfr = self.objs["differ"]
-        ratio_changed = dfr.diff_ratio(bfr.copy, bfr.undos[-1])
-        if ratio_changed < 1.0:
-            bfr.save_edit()
+        self.bfr.save_edit()
 
     def on_undoButton_clicked(self, widget):
         print("SIGNAL: on_undoButton_clicked")
-        with self.objs["buffer"].handler_block(self.id_changed):
-            self.objs["buffer"].undo_edit()
+        with self.bfr.handler_block(self.id_chngd):
+            self.bfr.undo_edit()
 
     def on_redoButton_clicked(self, widget):
         print("SIGNAL: on_redoButton_clicked")
-        with self.objs["buffer"].handler_block(self.id_changed):
-            self.objs["buffer"].redo_edit()
+        with self.bfr.handler_block(self.id_chngd):
+            self.bfr.redo_edit()
+
+    def on_saveButton_clicked(self, widget):
+        print("SIGNAL: on_saveButton_clicked")
+        print(self.bfr.edits)
 
 
 class SegmentBuffer(Gtk.TextBuffer):
@@ -45,55 +42,48 @@ class SegmentBuffer(Gtk.TextBuffer):
     def __init__(self, segment="Default text"):
         Gtk.TextBuffer.__init__(self)
 
-        # TODO: explain why using empty string in list instead of just empty list
-        self.undos = [""]
-        self.redos = [""]
+        # None is a sentinel value. The newline is for setting text.
+        self.edits = deque([None, segment + '\n'])
 
-        self.set_text(segment, len(segment))
+        self.set_text(segment)
+        self.prev = segment
+        self.curr = segment
+        self.matcher = SequenceMatcher()
 
-        self.copy = self.props.text
+    def text_comparison(self):
+        self.matcher.set_seqs(self.curr, self.prev)
+        ratio = self.matcher.quick_ratio()
+        print("matcher ratio: ", ratio)
+        return ratio
 
-    def add_bf(self, buffer_name, element):
-        buffer_name.append(element)
+    def text_updates(self):
+        self.curr = self.props.text
+        change = self.text_comparison()
+        if change < 0.99:
+            self.prev = self.curr
 
-    def pop_bf(self, buffer_name, index= -1):
-        return buffer_name.pop(index)
-
-    # makes a copy of the text content
-    def copy_text(self):
-        self.copy = self.props.text
+    def clear_old_edits(self):
+        """clears out the previous edits if any"""
+        while self.edits[0] is not None:
+            self.edits.popleft()
 
     def save_edit(self):
-        self.add_bf(self.undos, self.copy)
-        self.copy_text()
-        self.redos.clear()
+        self.text_updates()
+        self.edits.append(self.prev)
+        self.clear_old_edits()
 
     def undo_edit(self):
-        self.add_bf(self.redos, self.copy)
-        undo = self.pop_bf(self.undos)
-        self.set_text(undo, len(undo))
+        if self.edits[-1] is not None:
+            self.edits.rotate(1)
+            undo = self.edits[-1]
+            if undo is not None:
+                self.set_text(undo)
 
     def redo_edit(self):
-        self.add_bf(self.undos, self.copy)
-        redo = self.pop_bf(self.redos)
-        self.set_text(redo, len(redo))
-
-
-class SequenceDiffer(difflib.SequenceMatcher):
-    """Generates deltas and compares strings with difflib"""
-    def __init__(self):
-        difflib.SequenceMatcher.__init__(self)
-        self.ndiff = difflib.ndiff
-        self.restore = difflib.restore
-
-    def restore_diff(self, diff, which):
-        return ''.join(self.restore(diff, which))
-
-    def diff_ratio(self, seq1, seq2):
-        self.set_seqs(seq1, seq2)
-        return self.quick_ratio()
-
-
-class FileClerk:
-    """The class for saving files"""
-    pass
+        if self.edits[0] is not None:
+            self.edits.rotate(-1)
+            redo = self.edits[-1]
+            if redo is not None:
+                self.set_text(redo)
+        else:
+            self.set_text(self.curr)

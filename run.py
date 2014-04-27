@@ -1,6 +1,6 @@
 import os
-import tempfile
-import difflib
+from collections import deque
+from difflib import SequenceMatcher, ndiff, restore
 from gi.repository import Gtk
 
 from WordAgent import *
@@ -24,15 +24,14 @@ welcome_message = """
 bob = Gtk.Builder()
 bob.add_from_file("WordAgentApp.glade")
 
-seg_bfr = SegmentBuffer(welcome_message)
+seg_bfr = SegmentBuffer()
 txt_box = bob.get_object("editView")
 txt_box.set_buffer(seg_bfr)
 
 win = bob.get_object("mainWindow")
-diff = SequenceDiffer()
-clrk = FileClerk()
+diff = SequenceMatcher()
 
-bob.connect_signals(SignalHandler(seg_bfr, diff, clrk))
+bob.connect_signals(SignalHandler(seg_bfr))
 
 win.show_all()
 Gtk.main()
