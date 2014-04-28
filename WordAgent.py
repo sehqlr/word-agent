@@ -7,14 +7,16 @@ from gi.repository import Gtk
 
 class SignalHandler:
     """Handles signals from user events"""
-    def __init__(self, segment_buffer):
+    def __init__(self, segment_buffer, project_name):
         self.bfr = segment_buffer
+        self.pf = open(project_name, "w+")
 
         # adding custom signals here
         self.id_chngd = self.bfr.connect("changed", self.buffer_changed)
 
     def gtk_main_quit(self, *args):
         print("SIGNAL: gtk_main_quit")
+        self.pf.close()
         Gtk.main_quit(*args)
 
     def buffer_changed(self, widget):
@@ -34,7 +36,8 @@ class SignalHandler:
 
     def on_saveButton_clicked(self, widget):
         print("SIGNAL: on_saveButton_clicked")
-        print(self.bfr.edits)
+        text = self.bfr.fetch_text()
+        self.pf.write(text)
 
 
 class SegmentBuffer(Gtk.TextBuffer):
@@ -62,6 +65,9 @@ class SegmentBuffer(Gtk.TextBuffer):
         if change < 0.99:
             self.prev = self.curr
 
+    def fetch_text(self):
+        return self.curr
+
     def clear_old_edits(self):
         """clears out the previous edits if any"""
         while self.edits[0] is not None:
@@ -87,3 +93,5 @@ class SegmentBuffer(Gtk.TextBuffer):
                 self.set_text(redo)
         else:
             self.set_text(self.curr)
+
+

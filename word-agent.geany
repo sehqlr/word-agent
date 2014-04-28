@@ -28,10 +28,11 @@ FILE_NAME_0=2983;None;0;EUTF-8;1;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2F
 FILE_NAME_1=0;Python;0;EUTF-8;1;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2Fcloud.py;0;4
 FILE_NAME_2=0;None;0;EUTF-8;1;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2Fdebug.txt;0;4
 FILE_NAME_3=0;Markdown;0;EUTF-8;1;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2FREADME.md;0;4
-FILE_NAME_4=0;Python;0;EUTF-8;1;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2Frun.py;0;4
-FILE_NAME_5=0;Python;0;EUTF-8;1;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2Ftest_edits.py;0;4
-FILE_NAME_6=0;Python;0;EUTF-8;1;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2Ftest_init.py;0;4
-FILE_NAME_7=0;Python;0;EUTF-8;1;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2FWordAgent.py;0;4
+FILE_NAME_4=880;Python;0;EUTF-8;1;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2Frun.py;0;4
+FILE_NAME_5=1361;Python;0;EUTF-8;0;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2Ftest_edits.py;0;4
+FILE_NAME_6=589;Python;0;EUTF-8;1;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2Ftest_init.py;0;4
+FILE_NAME_7=552;Python;0;EUTF-8;0;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2FWordAgent.py;0;4
+FILE_NAME_8=346;Python;0;EUTF-8;0;1;0;%2Fhome%2Fsam%2FDevelopment%2Fword-agent%2Ftest_file.py;0;4
 
 [VTE]
 last_dir=/home/sam/Development/word-agent
