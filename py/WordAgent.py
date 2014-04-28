@@ -3,40 +3,47 @@
 import io
 from collections import deque
 from difflib import SequenceMatcher, ndiff, restore
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
 
 class SignalHandler:
     """Handles signals from user events"""
     def __init__(self, segment_buffer, project_name):
         self.bfr = segment_buffer
+        self.cpbd = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
         self.pf = open(project_name, "w+")
+
+        self.msg = "HANDLER: "
 
         # adding custom signals here
         self.id_chngd = self.bfr.connect("changed", self.buffer_changed)
 
     def gtk_main_quit(self, *args):
-        print("SIGNAL: gtk_main_quit")
+        print(self.msg, "gtk_main_quit")
         self.pf.close()
         Gtk.main_quit(*args)
 
     def buffer_changed(self, widget):
         """Custom signal for SegmentBuffer class"""
-        print("SIGNAL: buffer_changed")
+        print(self.msg, "buffer_changed")
         self.bfr.save_edit()
 
+    def on_newButton_clicked(self, widget):
+        print(self.msg, "on_newButton_clicked")
+
+
     def on_undoButton_clicked(self, widget):
-        print("SIGNAL: on_undoButton_clicked")
+        print(self.msg, "on_undoButton_clicked")
         with self.bfr.handler_block(self.id_chngd):
             self.bfr.undo_edit()
 
     def on_redoButton_clicked(self, widget):
-        print("SIGNAL: on_redoButton_clicked")
+        print(self.msg, "on_redoButton_clicked")
         with self.bfr.handler_block(self.id_chngd):
             self.bfr.redo_edit()
 
     def on_saveButton_clicked(self, widget):
-        print("SIGNAL: on_saveButton_clicked")
-        text = self.bfr.fetch_text()
+        print(self.msg, "on_saveButton_clicked")
+        text = self.bfr.curr
         self.pf.write(text)
 
 
@@ -51,6 +58,7 @@ class SegmentBuffer(Gtk.TextBuffer):
         self.set_text(segment)
         self.prev = segment
         self.curr = segment
+
         self.matcher = SequenceMatcher()
 
     def text_comparison(self):
@@ -61,12 +69,8 @@ class SegmentBuffer(Gtk.TextBuffer):
 
     def text_updates(self):
         self.curr = self.props.text
-        change = self.text_comparison()
-        if change < 0.99:
+        if self.text_comparison() < 0.99:
             self.prev = self.curr
-
-    def fetch_text(self):
-        return self.curr
 
     def clear_old_edits(self):
         """clears out the previous edits if any"""
@@ -95,3 +99,4 @@ class SegmentBuffer(Gtk.TextBuffer):
             self.set_text(self.curr)
 
 
+class WindowBuilder(Gtk.Builder):

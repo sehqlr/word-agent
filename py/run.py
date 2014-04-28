@@ -1,8 +1,4 @@
 import os
-import io
-from collections import deque
-from difflib import SequenceMatcher, ndiff, restore
-from gi.repository import Gtk
 
 from WordAgent import *
 
