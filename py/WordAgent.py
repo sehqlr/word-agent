@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import io
+import tempfile
 from collections import deque
 from difflib import SequenceMatcher, ndiff, restore
 from gi.repository import Gtk, Gdk
@@ -11,6 +12,7 @@ class SignalHandler:
         self.bfr = segment_buffer
         self.pf = open(project_name, "w+")
 
+        self.src_path = "/home/sam/Development/word-agent"
         self.msg = "HANDLER: "
 
         # adding custom signals here
@@ -28,11 +30,14 @@ class SignalHandler:
 
     def on_newButton_clicked(self, widget):
         print(self.msg, "on_newButton_clicked")
-        new = Gtk.Builder.new_from_file("../ui/DialogBoxes.glade")
-        new.show()
+        tempfile.NamedTemporaryFile
 
     def on_openButton_clicked(self, widget):
         print(self.msg, "on_openButton_clicked")
+        bob = Gtk.Builder.new()
+        bob.add_from_file(self.src_path + "/ui/OpenFileDialog.glade")
+        win = bob.get_object("OpenFileChooserDialog")
+        win.show()
 
     def on_saveButton_clicked(self, widget):
         print(self.msg, "on_saveButton_clicked")
@@ -41,6 +46,10 @@ class SignalHandler:
 
     def on_saveasButton_clicked(self, widget):
         print(self.msg, "on_saveButton_clicked")
+        bob = Gtk.Builder.new()
+        bob.add_from_file(self.src_path + "/ui/SaveFileDialog.glade")
+        win = bob.get_object("SaveFileChooserDialog")
+        win.show()
 
     def on_undoButton_clicked(self, widget):
         print(self.msg, "on_undoButton_clicked")
