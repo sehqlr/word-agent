@@ -6,10 +6,9 @@ from difflib import SequenceMatcher, ndiff, restore
 from gi.repository import Gtk, Gdk
 
 class SignalHandler:
-    """Handles signals from user events"""
+    """Handles user events and file IO"""
     def __init__(self, segment_buffer, project_name):
         self.bfr = segment_buffer
-        self.cpbd = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
         self.pf = open(project_name, "w+")
 
         self.msg = "HANDLER: "
@@ -29,7 +28,19 @@ class SignalHandler:
 
     def on_newButton_clicked(self, widget):
         print(self.msg, "on_newButton_clicked")
+        new = Gtk.Builder.new_from_file("../ui/DialogBoxes.glade")
+        new.show()
 
+    def on_openButton_clicked(self, widget):
+        print(self.msg, "on_openButton_clicked")
+
+    def on_saveButton_clicked(self, widget):
+        print(self.msg, "on_saveButton_clicked")
+        text = self.bfr.curr
+        self.pf.write(text)
+
+    def on_saveasButton_clicked(self, widget):
+        print(self.msg, "on_saveButton_clicked")
 
     def on_undoButton_clicked(self, widget):
         print(self.msg, "on_undoButton_clicked")
@@ -41,14 +52,33 @@ class SignalHandler:
         with self.bfr.handler_block(self.id_chngd):
             self.bfr.redo_edit()
 
-    def on_saveButton_clicked(self, widget):
-        print(self.msg, "on_saveButton_clicked")
-        text = self.bfr.curr
-        self.pf.write(text)
+    def on_cutButton_clicked(self, widget):
+        print(self.msg, "on_cutButton_clicked")
+
+    def on_copyButton_clicked(self, widget):
+        print(self.msg, "on_copyButton_clicked")
+
+    def on_pasteButton_clicked(self, widget):
+        print(self.msg, "on_pasteButton_clicked")
+
+    def on_aboutButton_clicked(self, widget):
+        print(self.msg, "on_aboutButton_clicked")
+
+    def on_CancelOpenButton_clicked(self, widget):
+        print(self.msg, "on_CancelOpenButton_clicked")
+
+    def on_AcceptOpenButton_clicked(self, widget):
+        print(self.msg, "on_AcceptOpenButton_clicked")
+
+    def on_CancelSaveButton_clicked(self, widget):
+        print(self.msg, "on_CancelSaveButton_clicked")
+
+    def on_AcceptSaveButton_clicked(self, widget):
+        print(self.msg, "on_AcceptSaveButton_clicked")
 
 
 class SegmentBuffer(Gtk.TextBuffer):
-    """Extends text buffer to include version lists"""
+    """Extended with undo/redo, clipboard, and sequence matcher"""
     def __init__(self, segment="Default text"):
         Gtk.TextBuffer.__init__(self)
 
@@ -60,7 +90,10 @@ class SegmentBuffer(Gtk.TextBuffer):
         self.curr = segment
 
         self.matcher = SequenceMatcher()
+        self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 
+
+    # AUTOSAVE METHODS
     def text_comparison(self):
         self.matcher.set_seqs(self.curr, self.prev)
         ratio = self.matcher.quick_ratio()
@@ -82,6 +115,8 @@ class SegmentBuffer(Gtk.TextBuffer):
         self.edits.append(self.prev)
         self.clear_old_edits()
 
+
+    # UNDO BUTTON ACTIONS
     def undo_edit(self):
         if self.edits[-1] is not None:
             self.edits.rotate(1)
@@ -89,6 +124,8 @@ class SegmentBuffer(Gtk.TextBuffer):
             if undo is not None:
                 self.set_text(undo)
 
+
+    # REDO BUTTON ACTIONS
     def redo_edit(self):
         if self.edits[0] is not None:
             self.edits.rotate(-1)
@@ -98,5 +135,8 @@ class SegmentBuffer(Gtk.TextBuffer):
         else:
             self.set_text(self.curr)
 
+    # CUT BUTTON ACTIONS
 
-class WindowBuilder(Gtk.Builder):
+    # COPY BUTTON ACTIONS
+
+    # PASTE BUTTON ACTIONS

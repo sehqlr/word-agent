@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <!-- interface-requires gtk+ 3.0 -->
-  <object class="GtkWindow" id="mainWindow">
+  <object class="GtkWindow" id="topWindow">
     <property name="width_request">600</property>
     <property name="height_request">600</property>
     <property name="can_focus">False</property>
@@ -13,12 +13,12 @@
     <property name="window_position">center</property>
     <signal name="destroy" handler="gtk_main_quit" swapped="no"/>
     <child>
-      <object class="GtkBox" id="box1">
+      <object class="GtkBox" id="mainBox">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="orientation">vertical</property>
         <child>
-          <object class="GtkButtonBox" id="buttonbox1">
+          <object class="GtkButtonBox" id="menuButtonBox">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="layout_style">center</property>
@@ -199,12 +199,12 @@
           </packing>
         </child>
         <child>
-          <object class="GtkScrolledWindow" id="scrolledwindow1">
+          <object class="GtkScrolledWindow" id="editScrolledWindow">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="shadow_type">in</property>
             <child>
-              <object class="GtkTextView" id="editView">
+              <object class="GtkTextView" id="editTextView">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="hexpand">True</property>

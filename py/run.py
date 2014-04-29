@@ -6,8 +6,9 @@ welcome_message = """
     Welcome to the Word Agent, the novel project management app!
 
     Features currently in development:
-        Undo/Redo
-        File IO
+        Cut/Copy/Paste
+        New/Open files
+        GUI building methods
 
     Next Feature in the works:
         Project management
@@ -18,19 +19,16 @@ welcome_message = """
         Cloud Collaboration with WebRTC
 """
 
-bob = Gtk.Builder()
-bob.add_from_file("WordAgentApp.glade")
+app = Gtk.Builder.new_from_file("../ui/MainApp.glade")
 
 seg_bfr = SegmentBuffer(welcome_message)
-txt_box = bob.get_object("editView")
+txt_box = app.get_object("editTextView")
 txt_box.set_buffer(seg_bfr)
 
 os.chdir("/home/sam/Documents/testing")
 project_name = "default.wa.txt"
 
-win = bob.get_object("mainWindow")
+app.connect_signals(SignalHandler(seg_bfr, project_name))
 
-bob.connect_signals(SignalHandler(seg_bfr, project_name))
-
-win.show_all()
+app.show()
 Gtk.main()
