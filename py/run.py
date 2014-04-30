@@ -27,7 +27,7 @@ seg_bfr = SegmentBuffer(welcome_message)
 txt_box = bob.get_object("editTextView")
 txt_box.set_buffer(seg_bfr)
 
-os.chdir("/home/sam/Documents/testing")
+os.chdir("~/testing")
 project_name = "default.wa.txt"
 
 bob.connect_signals(SignalHandler(seg_bfr, project_name))
