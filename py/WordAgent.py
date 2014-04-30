@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import io
-import tempfile
 from collections import deque
 from difflib import SequenceMatcher, ndiff, restore
 from gi.repository import Gtk, Gdk
@@ -30,7 +29,7 @@ class SignalHandler:
 
     def on_newButton_clicked(self, widget):
         print(self.msg, "on_newButton_clicked")
-        tempfile.NamedTemporaryFile
+        open("untitled.wa.txt", "w+")
 
     def on_openButton_clicked(self, widget):
         print(self.msg, "on_openButton_clicked")
@@ -149,3 +148,7 @@ class SegmentBuffer(Gtk.TextBuffer):
     # COPY BUTTON ACTIONS
 
     # PASTE BUTTON ACTIONS
+
+class SegmentDatabase:
+    """Organizes the segments in the current project"""
+    pass
