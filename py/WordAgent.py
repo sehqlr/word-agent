@@ -5,11 +5,15 @@ from collections import deque
 from difflib import SequenceMatcher, ndiff, restore
 from gi.repository import Gtk, Gdk
 
+# FIXME: there should be WordAgent.functions that encode much of what SignalHandler does now.
+
 class SignalHandler:
     """Handles user events and file IO"""
+    # FIXME: It would be better to have this class focus on error checking and logging.
     def __init__(self, segment_buffer, project_name):
         self.bfr = segment_buffer
-        self.pf = # TODO: tempfile "untitled.wa.txt"
+        # TODO: Reimplement as temp file
+        self.pf = open("untitled.wa.txt", "w+")
 
         # TODO: Reimplement this as relative paths from the root of the source directory.
         self.src_path = "/home/sam/Development/word-agent"
@@ -71,27 +75,24 @@ class SignalHandler:
 
     def on_cutButton_clicked(self, widget):
         print(self.msg, "on_cutButton_clicked")
-        # TODO: assert correct syntax
         if self.bfr.get_has_selection():
-            self.bfr.cut_clipboard(self.bfr.clipboard)
+            self.bfr.cut_clipboard(self.bfr.clipboard, True)
 
     def on_copyButton_clicked(self, widget):
         print(self.msg, "on_copyButton_clicked")
-        # TODO: make sure this is the right syntax. This goes for cut and paste, also
         if self.bfr.get_has_selection():
             self.bfr.copy_clipboard(self.bfr.clipboard)
 
     def on_pasteButton_clicked(self, widget):
         print(self.msg, "on_pasteButton_clicked")
-        # TODO: assert correct syntax
-        self.bfr.paste_clipboard(self.bfr.clipboard)
+        self.bfr.paste_clipboard(self.bfr.clipboard, None, True)
 
     def on_aboutButton_clicked(self, widget):
         print(self.msg, "on_aboutButton_clicked")
         # TODO: Build the About dialog without a Glade file
 
 
-# TODO: Use the same buttons for all dialog windows, and program the behavior accordingly. This will keep the number of signals down, increasing readability later on.
+# FIXME: Use the same buttons for all dialog windows, and program the behavior accordingly. This will keep the number of signals down, increasing readability later on.
 
     def on_cancelButton_clicked(self, widget):
         print(self.msg, "on_cancelButton_clicked")
@@ -114,6 +115,7 @@ class SegmentBuffer(Gtk.TextBuffer):
 
         self.matcher = SequenceMatcher()
         self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+        self.add_selection_clipboard(self.clipboard)
 
 
     # AUTOSAVE METHODS
@@ -168,4 +170,5 @@ class SegmentBuffer(Gtk.TextBuffer):
 
 class SegmentDatabase:
     """Organizes the segments in the current project"""
+    # TODO: Start implementing this in v0.3
     pass
