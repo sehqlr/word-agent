@@ -1,22 +1,89 @@
-#!/usr/bin/env python3
-
-import io
 from collections import deque
 from difflib import SequenceMatcher, ndiff, restore
 from gi.repository import Gtk, Gdk
+import io
+import tempfile
 
 # FIXME: there should be WordAgent.functions that encode much of what SignalHandler does now.
+
+# TOP LEVEL METHODS
+
+def app_quit():
+    # TODO: Close out any open files
+    Gtk.main_quit(*args)
+
+# DIALOG METHODS
+
+def open_file_dialog():
+    """Launch a File/Open dialog window"""
+    dialog = Gtk.FileChooserDialog("Open a project", None,
+        Gtk.FileChooserAction.OPEN,
+        (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+         Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+    response = dialog.run()
+    if response == Gtk.ResponseType.OK:
+        print("Open clicked")
+        print("File opened: " + dialog.get_filename())
+        dialog.destroy()
+    if response == Gtk.ResponseType.CANCEL:
+        print("Cancel clicked")
+        dialog.destroy()
+
+def save_file_dialog():
+    """Launch a File/Save dialog window"""
+    dialog = Gtk.FileChooserDialog("Save your project", None,
+        Gtk.FileChooserAction.SAVE,
+        (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+         Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
+    response = dialog.run()
+    if response == Gtk.ResponseType.OK:
+        print("Save clicked")
+        dialog.destory()
+    if response == Gtk.ResponseType.CANCEL:
+        print("Cancel clicked")
+        dialog.destory()
+
+def about_app_dialog():
+    """Launch an About dialog window"""
+    dialog = Gtk.AboutDialog.new()
+    dialog.set_program_name("Word Agent")
+    dialog.set_authors(["Sam Hatfield", None])
+    dialog.set_version("0.1")
+    dialog.set_website("https://github.com/sehqlr/word-agent")
+    dialog.set_website_label("Fork us on GitHub!")
+    dialog.set_comments("A minimal text editor with a big future.")
+    response = dialog.run()
+    if response:
+        print("About closed")
+        dialog.destroy()
+
+# CUT/COPY/PASTE METHODS
+
+def cut_to_clipboard(seg_buffer):
+    if seg_buffer.get_has_selection():
+        seg_buffer.cut_clipboard(seg_buffer.clipboard, True)
+
+def copy_to_clipboard(seg_buffer):
+    if seg_buffer.get_has_selection():
+        seg_buffer.copy_clipboard(seg_buffer.clipboard)
+
+def paste_from_clipboard(seg_buffer):
+    self.bfr.paste_clipboard(self.bfr.clipboard, None, True)
+
+# SAVE/OPEN METHODS
+
+def save_project_file():
+    pass
+
+def open_project_file():
+    pass
+
 
 class SignalHandler:
     """Handles user events and file IO"""
     # FIXME: It would be better to have this class focus on error checking and logging.
     def __init__(self, segment_buffer, project_name):
         self.bfr = segment_buffer
-        # TODO: Reimplement as temp file
-        self.pf = open("untitled.wa.txt", "w+")
-
-        # TODO: Reimplement this as relative paths from the root of the source directory.
-        self.src_path = "/home/sam/Development/word-agent"
         self.msg = "HANDLER: "
 
         # adding custom signals here
@@ -24,8 +91,7 @@ class SignalHandler:
 
     def gtk_main_quit(self, *args):
         print(self.msg, "gtk_main_quit")
-        self.pf.close()
-        Gtk.main_quit(*args)
+        app_quit()
 
     def buffer_changed(self, widget):
         """Custom signal for SegmentBuffer class"""
@@ -39,13 +105,7 @@ class SignalHandler:
 
     def on_openButton_clicked(self, widget):
         print(self.msg, "on_openButton_clicked")
-        # FIXME: Remove need for separate glade file
-        bob = Gtk.Builder.new()
-        bob.add_from_file(self.src_path + "/ui/OpenFileDialog.glade")
-        win = bob.get_object("OpenFileChooserDialog")
-        win.show()
-        # TODO: Build dialog from the code
-        #~ win = Gtk.FileChooser.new(title="Open a project...", action="OPEN")
+        open_file_dialog()
 
     def on_saveButton_clicked(self, widget):
         print(self.msg, "on_saveButton_clicked")
@@ -55,13 +115,7 @@ class SignalHandler:
 
     def on_saveasButton_clicked(self, widget):
         print(self.msg, "on_saveButton_clicked")
-        # FIXME: Having a whole file just for a standard dialog window is bad for disk space
-        bob = Gtk.Builder.new()
-        bob.add_from_file(self.src_path + "/ui/SaveFileDialog.glade")
-        win = bob.get_object("SaveFileChooserDialog")
-        win.show()
-        # TODO: build Save File dialog without Glade file
-        #~ win = Gtk.FileChooser.new(title="Save as...", action="SAVE")
+        save_file_dialog()
 
     def on_undoButton_clicked(self, widget):
         print(self.msg, "on_undoButton_clicked")
@@ -75,30 +129,20 @@ class SignalHandler:
 
     def on_cutButton_clicked(self, widget):
         print(self.msg, "on_cutButton_clicked")
-        if self.bfr.get_has_selection():
-            self.bfr.cut_clipboard(self.bfr.clipboard, True)
+        cut_to_clipboard(self.bfr)
 
     def on_copyButton_clicked(self, widget):
         print(self.msg, "on_copyButton_clicked")
-        if self.bfr.get_has_selection():
-            self.bfr.copy_clipboard(self.bfr.clipboard)
+        copy_to_clipboard()
 
     def on_pasteButton_clicked(self, widget):
         print(self.msg, "on_pasteButton_clicked")
-        self.bfr.paste_clipboard(self.bfr.clipboard, None, True)
+        paste_from_clipboard()
 
     def on_aboutButton_clicked(self, widget):
         print(self.msg, "on_aboutButton_clicked")
-        # TODO: Build the About dialog without a Glade file
+        about_app_dialog()
 
-
-# FIXME: Use the same buttons for all dialog windows, and program the behavior accordingly. This will keep the number of signals down, increasing readability later on.
-
-    def on_cancelButton_clicked(self, widget):
-        print(self.msg, "on_cancelButton_clicked")
-
-    def on_acceptButton_clicked(self, widget):
-        print(self.msg, "on_acceptButton_clicked")
 
 
 class SegmentBuffer(Gtk.TextBuffer):
@@ -140,7 +184,6 @@ class SegmentBuffer(Gtk.TextBuffer):
         self.edits.append(self.prev)
         self.clear_old_edits()
 
-
     # UNDO BUTTON ACTIONS
     def undo_edit(self):
         if self.edits[-1] is not None:
@@ -148,7 +191,6 @@ class SegmentBuffer(Gtk.TextBuffer):
             undo = self.edits[-1]
             if undo is not None:
                 self.set_text(undo)
-
 
     # REDO BUTTON ACTIONS
     def redo_edit(self):
@@ -160,15 +202,21 @@ class SegmentBuffer(Gtk.TextBuffer):
         else:
             self.set_text(self.curr)
 
-    # TODO: Do we need custom commands for cut, copy, and paste?
+class ProjectDatabase:
+    """Handles file I/O and organizes segments and projects"""
+    def __init__(self):
+        self.file_suffix = ".wa.txt"
+        self.default_name = "untitled" + self.file_suffix
+        self.open_files = [None]
+        self.curr_file = None
 
-    # CUT BUTTON ACTIONS
+    def new_file(self, name=self.default_name):
+        newf = open(name, "w+")
+        self.open_files.append(newf)
 
-    # COPY BUTTON ACTIONS
+    def set_curr_file(self, index):
+        self.curr_file = self.open_files[index]
 
-    # PASTE BUTTON ACTIONS
-
-class SegmentDatabase:
-    """Organizes the segments in the current project"""
-    # TODO: Start implementing this in v0.3
-    pass
+    def file_rotate(self, prev=False):
+        if prev is False:
+            self
