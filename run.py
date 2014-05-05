@@ -13,15 +13,15 @@ welcome_message = """
     Features currently in development:
         Cut/Copy/Paste
         New/Open files
-        GUI building methods
+        Dialog boxes
 
     Next Feature in the works:
         Project management
-        "Post Production" formatting (Scribus integration?)
 
     Future Features:
         Version Control System integration
         Cloud Collaboration with WebRTC
+        "Post Production" formatting (Scribus integration?)
 """
 
 # Path Strings
@@ -33,14 +33,16 @@ testing_dir = src_path + "/testing"
 bob = Gtk.Builder.new()
 bob.add_from_file(main_glade_file)
 
+# SegmentBuffer and associated TextView
 bfr = WA.SegmentBuffer(welcome_message)
 txt = bob.get_object("editTextView")
 txt.set_buffer(bfr)
 
-os.chdir(testing_dir)
-project_name = "default.wa.txt"
+fdb = WA.FileDatabase()
 
-bob.connect_signals(WA.SignalHandler(bfr, project_name))
+os.chdir(testing_dir)
+
+bob.connect_signals(WA.SignalHandler(bfr, fdb))
 
 app = bob.get_object("topWindow")
 app.show()
