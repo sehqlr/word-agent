@@ -9,8 +9,9 @@ class SignalHandler:
     """Handles user events and file IO"""
     def __init__(self, segment_buffer, project_name):
         self.bfr = segment_buffer
-        self.pf = open(project_name, "w+")
+        self.pf = # TODO: tempfile "untitled.wa.txt"
 
+        # TODO: Reimplement this as relative paths from the root of the source directory.
         self.src_path = "/home/sam/Development/word-agent"
         self.msg = "HANDLER: "
 
@@ -29,26 +30,34 @@ class SignalHandler:
 
     def on_newButton_clicked(self, widget):
         print(self.msg, "on_newButton_clicked")
+        # FIXME: Reimplement this as a temp file
         open("untitled.wa.txt", "w+")
 
     def on_openButton_clicked(self, widget):
         print(self.msg, "on_openButton_clicked")
+        # FIXME: Remove need for separate glade file
         bob = Gtk.Builder.new()
         bob.add_from_file(self.src_path + "/ui/OpenFileDialog.glade")
         win = bob.get_object("OpenFileChooserDialog")
         win.show()
+        # TODO: Build dialog from the code
+        #~ win = Gtk.FileChooser.new(title="Open a project...", action="OPEN")
 
     def on_saveButton_clicked(self, widget):
         print(self.msg, "on_saveButton_clicked")
+        # TODO: Launch Save As dialog if we haven't already
         text = self.bfr.curr
         self.pf.write(text)
 
     def on_saveasButton_clicked(self, widget):
         print(self.msg, "on_saveButton_clicked")
+        # FIXME: Having a whole file just for a standard dialog window is bad for disk space
         bob = Gtk.Builder.new()
         bob.add_from_file(self.src_path + "/ui/SaveFileDialog.glade")
         win = bob.get_object("SaveFileChooserDialog")
         win.show()
+        # TODO: build Save File dialog without Glade file
+        #~ win = Gtk.FileChooser.new(title="Save as...", action="SAVE")
 
     def on_undoButton_clicked(self, widget):
         print(self.msg, "on_undoButton_clicked")
@@ -62,27 +71,33 @@ class SignalHandler:
 
     def on_cutButton_clicked(self, widget):
         print(self.msg, "on_cutButton_clicked")
+        # TODO: assert correct syntax
+        if self.bfr.get_has_selection():
+            self.bfr.cut_clipboard(self.bfr.clipboard)
 
     def on_copyButton_clicked(self, widget):
         print(self.msg, "on_copyButton_clicked")
+        # TODO: make sure this is the right syntax. This goes for cut and paste, also
+        if self.bfr.get_has_selection():
+            self.bfr.copy_clipboard(self.bfr.clipboard)
 
     def on_pasteButton_clicked(self, widget):
         print(self.msg, "on_pasteButton_clicked")
+        # TODO: assert correct syntax
+        self.bfr.paste_clipboard(self.bfr.clipboard)
 
     def on_aboutButton_clicked(self, widget):
         print(self.msg, "on_aboutButton_clicked")
+        # TODO: Build the About dialog without a Glade file
 
-    def on_CancelOpenButton_clicked(self, widget):
-        print(self.msg, "on_CancelOpenButton_clicked")
 
-    def on_AcceptOpenButton_clicked(self, widget):
-        print(self.msg, "on_AcceptOpenButton_clicked")
+# TODO: Use the same buttons for all dialog windows, and program the behavior accordingly. This will keep the number of signals down, increasing readability later on.
 
-    def on_CancelSaveButton_clicked(self, widget):
-        print(self.msg, "on_CancelSaveButton_clicked")
+    def on_cancelButton_clicked(self, widget):
+        print(self.msg, "on_cancelButton_clicked")
 
-    def on_AcceptSaveButton_clicked(self, widget):
-        print(self.msg, "on_AcceptSaveButton_clicked")
+    def on_acceptButton_clicked(self, widget):
+        print(self.msg, "on_acceptButton_clicked")
 
 
 class SegmentBuffer(Gtk.TextBuffer):
@@ -142,6 +157,8 @@ class SegmentBuffer(Gtk.TextBuffer):
                 self.set_text(redo)
         else:
             self.set_text(self.curr)
+
+    # TODO: Do we need custom commands for cut, copy, and paste?
 
     # CUT BUTTON ACTIONS
 

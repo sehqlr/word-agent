@@ -1,28 +1,54 @@
-word-agent
+Word Agent
 ==========
 
-Word Agent is a Python3 text editor that I'm building with modules from the Python Standard Library.
+Word Agent is a Python text editor that I'm building from scratch, with modules from the version 3.3 of the Python Standard Library, version 3 of GTK+, and version 3 of the Glade UI designer.
 This is my submission for the CS50x Final Project.
 
-I'm currently undecided if I want to licence this with a permissive licence or GPL.
+I'm currently undecided if I want to licence this with a permissive licence or GPL. This will be decided in v0.2
 
-Currently, I'm working on the save/undo/redo feature. File IO is coming next.
+I will follow the convention of X.Y.Z version numbering. Even-numbered Y's will indicate work on improving existing features, and odd-numbered Y's indicate work on new features. Z numbers the increments, and X is a major change, which might include backwards compatibility breakage or major UX changes. My mental roadmap for the project is outlined below, but it can be changed depending upon Word Agent's userbase.
 
-After that, features will include novel project management, integrated version control, and cloud collaboration tools.
+Basic Features (planned for v0.2)
+=================================
+=================================
 
-Novel Project management will feature tools similar to yWriter, Plume Creator, and others.
-It will break the large document into smaller plaintext "segments" with a database to keep track of them.
-The project is not just for novels, other long-form projects will be supported.
+Currently, I'm working on some of the standard text editor features, which include File IO and cut/copy/paste. Text formatting will not be included in this version.
 
-Version Control System integration will feature Git, Mercurial, and other VCS programs. I'm not predicting that
-more advanced features on these will not be used. Because of this, and the fact that the program is written in Python,
-I think that Mercurial will be the default. I will most certainly support Git thought, because I'm not a git myself.
+Novel Project Management (planned for v0.4):
+============================================
+============================================
 
-Cloud Collaboration will feature WebRTC technology that connects instances of the program, so users can work on projects
-concurrently. This is where the VCS feature will come in handy.
+These features will be similar to yWriter, Plume Creator, and others.
 
-Other features could include Segment Lock Scheduler (people can access certain files on a schedule list during online sessions),
-WebRTC Conferencing (for discussion among collaborators), and Visual Merge Conflict Resolution (basically, drag and drop)
+It will break the large document into smaller plaintext "segments" with an internal database to keep track of where they belong in the scheme of the larger document. Word Agent will "render" the larger document by concatenating the segments together when the full project is needed.
 
-I'm planning on making this a long term project after CS50x is over, because I participate in NaNoWriMo and do other
-writings, and I like to collaborate with others online on creative projects. More details are in the idea.txt.
+These segments will be simple UTF-8 files with no implicit markup or formatting, for compatiblity with external tools and other programs, at the user's option. Markdown and other tools will be supported for an internal formatting module. This formatting would be applied during the "project rendering" stage as mentioned above.
+
+Up until Version 1.1, this program will have novels as the target project type. Support for academic papers, stage/screenplays, and other long works will be supported starting in version 1.1.
+
+
+Version Control System Integration (planned for v0.6)
+=====================================================
+=====================================================
+
+VCS Integration will feature Git, Mercurial, and other VCS programs. This will be useful for collaborative projects, and for a nice history feature.
+
+Mercurial will be the only one supported until version 1.3, since the project will be written in Python, and I can include the Mercurial scripts with the program as an additional module. My assumption is that many of the users of this program will not have VCS programs on their machines by default. However, starting in version 1.3, I will build support for the common ones, primarily Git.
+
+Cloud Collaboration (planned for v0.8)
+======================================
+======================================
+
+This feature will use WebRTC technology, and possibly Node.js or some similar technology if needed, that connects instances of the program, so users can work on projects concurrently. This is where the VCS feature will come in handy, as the deltas can be traded in a data channel.
+
+Text chat support will begin in Version 1.5, and bideo and audio chat, if supported, will appear some time in Version 2.
+
+Possible other features for v1.0 and beyond
+===========================================
+===========================================
+
+Distraction-free "Composition" mode: Modeled after FocusWriter and PyRoom, this feature is a fullscreen "composition" mode that tries to keep the writing going. This feature will have to get user imput on what works for them, and perhaps this will support user-built plugins. The composition tools may be things like timers, music, name generators, and other things to keep things going
+
+Project Scheduler: an alert system for users sent via email (or text chat, beginning in v1.5) for actions decided among users. This could include things such as benchmarks for peer editing, number of pages, and so on. This could include a "segment locker" feature that prevents multiple users from editing the same segment.
+
+Visual Merge Conflict Resolution: In case of a merge conflict, the two files can be shown side by side so that the users can negotiate how to solve the merge conflict. Because this is creative writing, merge conflicts can be easier to solve visually.
