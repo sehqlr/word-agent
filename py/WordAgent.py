@@ -1,5 +1,5 @@
 from collections import deque
-from difflib import SequenceMatcher, ndiff, restore
+from difflib import SequenceMatcher
 from gi.repository import Gtk, Gdk
 import io
 
@@ -49,7 +49,6 @@ class DialogMaker:
         if response == Gtk.ResponseType.OK:
             print("Open clicked")
             project_name = dialog.get_filename()
-            project_file = open(project_name, "r+")
             dialog.destroy()
         if response == Gtk.ResponseType.CANCEL:
             print("Cancel clicked")
@@ -67,8 +66,6 @@ class DialogMaker:
         if response == Gtk.ResponseType.OK:
             print("Save clicked")
             project_name = dialog.get_filename()
-            project_file = open(project_name, "r+")
-            project_file.write(text)
             dialog.destroy()
         if response == Gtk.ResponseType.CANCEL:
             print("Cancel clicked")
@@ -79,36 +76,34 @@ class DialogMaker:
 class SignalHandler:
     """Handles user events and file IO"""
     # TODO: Transistion this class to error handling and logging after v0.2. Each handler should have less than 10 lines of code, except for error checking.
-    def __init__(self, segment_buffer, project_file):
-        self.bfr = segment_buffer
-        self.pf = project_file
+    def __init__(self, segment):
+        self.seg = segment
         self.file_is_saved_as = False
         self.msg = "HANDLER: "
 
-        # adding custom signals here
-        self.id_chngd = self.bfr.connect("changed", self.buffer_changed)
+        # adding custom signal here
+        sig_id = self.seg.buffer.connect("changed", self.buffer_changed)
+        self.sig_buffer_changed = sig_id
 
     def gtk_main_quit(self, *args):
         print(self.msg, "gtk_main_quit")
-        self.pf.close()
         Gtk.main_quit(*args)
 
-    def buffer_changed(self, widget):
-        """Custom signal for SegmentBuffer class"""
-        print(self.msg, "buffer_changed")
-        self.bfr.save_edit()
+    def on_buffer_changed(self, widget):
+        """Custom signal for Segment.buffer"""
+        print(self.msg, "on_buffer_changed")
+        self.seg.autosave()
 
     def on_newButton_clicked(self, widget):
         print(self.msg, "on_newButton_clicked")
-        self.pf.close()
-        self.pf = open("untitled.wa.txt", "w")
-        self.bfr = SegmentBuffer.new_from_file(self.pf, self.bfr.text_view)
+        self.seg = Segment()
         self.file_is_saved_as = False
 
     def on_openButton_clicked(self, widget):
         print(self.msg, "on_openButton_clicked")
-        self.pf = DialogMaker.open_file_dialog()
-        self.bfr = SegmentBuffer.new_from_file(self.pf, self.bfr.text_view)
+        filename = DialogMaker.open_file_dialog()
+        content = Segment.read_from_file(filename)
+        self.seg = Segment(content)
         self.file_is_saved_as = True
 
     def on_saveButton_clicked(self, widget):
@@ -125,145 +120,141 @@ class SignalHandler:
 
     def on_undoButton_clicked(self, widget):
         print(self.msg, "on_undoButton_clicked")
-        with self.bfr.handler_block(self.id_chngd):
-            self.bfr.undo_edit()
+        with self.bfr.handler_block(self.sig_buffer_changed):
+            self.seg.undo()
 
     def on_redoButton_clicked(self, widget):
         print(self.msg, "on_redoButton_clicked")
-        with self.bfr.handler_block(self.id_chngd):
-            self.bfr.redo_edit()
+        with self.bfr.handler_block(self.sig_buffer_changed):
+            self.seg.redo()
 
     def on_cutButton_clicked(self, widget):
         print(self.msg, "on_cutButton_clicked")
-        self.bfr.cut_to_clipboard()
+        self.seg.cut()
 
     def on_copyButton_clicked(self, widget):
         print(self.msg, "on_copyButton_clicked")
-        self.bfr.copy_to_clipboard()
+        self.seg.copy()
 
     def on_pasteButton_clicked(self, widget):
         print(self.msg, "on_pasteButton_clicked")
-        self.bfr.paste_from_clipboard()
+        self.seg.paste()
 
     def on_aboutButton_clicked(self, widget):
         print(self.msg, "on_aboutButton_clicked")
         DialogMaker.about_app_dialog()
 
+
 class Segment:
-    """Organizes segments, including buffers, views, and files"""
-    def __init__(self):
-        self.buffer = Gtk.TextBuffer.new()
-        self.view = Gtk.TextView.new_with_buffer(self.buffer)
+    """Organizes a segment, including its buffer, view, file, etc"""
+    def __init__(self, filename="untitled.wa" content=welcome_message):
+        self._buffer = Gtk.TextBuffer()
+        self._buffer.set_text(content)
+
+        self._view = Gtk.TextView.new_with_buffer(self.buffer)
+
+        self._clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+        self._buffer.add_selection_clipboard(self._clipboard)
+
+        self._filename = filename
+
+        self._matcher = SequenceMatcher()
 
         # None is a sentinel value. The newline is for setting text.
-        self.edits = deque([None, welcome_message + '\n'])
-
-        self.buffer.set_text(welcome_message)
-        self.prev = welcome_message
-        self.curr = welcome_message
-
-        self.matcher = SequenceMatcher()
-        self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
-        self.buffer.add_selection_clipboard(self.clipboard)
+        self._edits = deque([None, welcome_message])
 
     @staticmethod
-    def new_from_file():
-        text = ""
-        for line in project_file:
-            text += line
-        seg_buffer = SegmentBuffer(segment=text, text_view=text_view)
-        text_view.set_buffer(seg_buffer)
-        return seg_buffer
+    def read_from_file(filename):
+        content = ""
+        with open(filename, "r") as textfile:
+            for line in textfile:
+                content += line
+
+        return content
+
+    @property
+    def buffer(self):
+        return self._buffer
+
+    @property
+    def view(self):
+        return self._view
+
+    @property
+    def clipboard(self):
+        return self._clipboard
+
+    @property
+    def filename(self):
+        return self._filename
+
+    @filename.setter
+    def filename(self, value):
+        self._filename = value
+
+    @property
+    def edits(self):
+        return self._edits
+
+    @property
+    def curr_text(self):
+        return self._buffer.props.text
+
+    @curr_text.setter
+    def curr_text(self, value):
+        self._buffer.set_text(value, len(value))
+
+    @property
+    def prev_edit(self):
+        return self._edits[-1]
 
     # AUTOSAVE METHODS
     def text_comparison(self):
-        self.matcher.set_seqs(self.curr, self.prev)
+        self.matcher.set_seqs(self.curr_text, self.prev_edit)
         ratio = self.matcher.quick_ratio()
         print("matcher ratio: ", ratio)
         return ratio
 
-    def text_updates(self):
-        self.curr = self.props.text
+    def autosave(self):
+        # IDEA: percentage here could be changed in Settings.
         if self.text_comparison() < 0.99:
-            self.prev = self.curr
+            self.edits.append(self.curr_text)
 
-    def clear_old_edits(self):
-        """clears out the previous edits if any"""
+        # clears out old edits using sentinel value
         while self.edits[0] is not None:
             self.edits.popleft()
 
-    def save_edit(self):
-        self.text_updates()
-        self.edits.append(self.prev)
-        self.clear_old_edits()
-
-    # UNDO/REDO BUTTON ACTIONS
-    def undo_edit(self):
-        if self.edits[-1] is not None:
+    # UNDO/REDO BUTTON METHODS
+    def undo(self):
+        self.edits.append(self.curr_text)
+        self.edits.rotate(1)
+        if self.prev_edit is not None:
             self.edits.rotate(1)
-            undo = self.edits[-1]
-            if undo is not None:
-                self.set_text(undo)
+            if self.prev_edit is not None:
+                self.curr_text = self.prev_edit
 
-    def redo_edit(self):
-        if self.edits[0] is not None:
+    def redo(self):
+        if self.prev_edit is not None:
             self.edits.rotate(-1)
-            redo = self.edits[-1]
-            if redo is not None:
-                self.set_text(redo)
-        else:
-            self.set_text(self.curr)
+            if self.prev_edit is not None:
+                self.curr_text = self.prev_edit
+        elif self.edits[0] is None:
+            pass
 
-    # CUT/COPY/PASTE BUTTON ACTIONS
-    def cut_to_clipboard(self):
-        if self.get_has_selection():
-            self.cut_clipboard(self.clipboard, True)
+    # CUT/COPY/PASTE BUTTON METHODS
+    def cut(self):
+        if self.buffer.get_has_selection():
+            self.buffer.cut_clipboard(self.clipboard, True)
 
-    def copy_to_clipboard(self):
-        if self.get_has_selection():
-            self.copy_clipboard(self.clipboard)
+    def copy(self):
+        if self.buffer.get_has_selection():
+            self.buffer.copy_clipboard(self.clipboard)
 
-    def paste_from_clipboard(self):
-        self.paste_clipboard(self.clipboard, None, True)
+    def paste(self):
+        self.buffer.paste_clipboard(self.clipboard, None, True)
 
-# This class is part of the Project Management feature.
-# Work will begin again in v0.3
-#~
-#~ class FileDatabase:
-    #~ """Handles file I/O and organizes segments and projects"""
-    #~ def __init__(self):
-        #~ self.file_suffix = ".wa.txt"
-        #~ self.open_files = []
-        #~ self._curr_file = None
-#~
-    #~ @property
-    #~ def curr_file(self):
-        #~ return self._curr_file
-#~
-    #~ @curr_file.setter
-    #~ def curr_file(self, value):
-        #~ self._curr_file = value
-#~
-    #~ def add_file(self, name):
-        #~ name = str(name) + self.file_suffix
-        #~ addf = open(name, "w")
-        #~ self.open_files.append(addf)
-        #~ return addf
-#~
-    #~ def fetch_file(self, index= -1):
-        #~ self.curr_file = self.open_files[index]
-#~
-    #~ # NEW/OPEN/SAVE METHODS
-#~
-    #~ def save_curr(self, segment_buffer):
-        #~ if self.curr_file is None:
-            #~ newf = self.add_file("untitled")
-            #~ self.curr_file = newf
-        #~ self.curr_file.write(segment_buffer.curr)
-#~
-    #~ def close_project_files(self):
-        #~ for f in self.open_files:
-            #~ try:
-                #~ f.close()
-            #~ except AttributeError:
-                #~ print(f, "is not a file object.")
+    # NEW/OPEN/SAVE BUTTON METHODS
+    def write_to_file(self):
+        with open(self.file_name, "w") as textfile:
+            textfile.write(self.curr_text)
+
