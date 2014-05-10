@@ -20,138 +20,14 @@ welcome_message = """
         "Post Production" formatting (Scribus integration?)
 """
 
-class DialogMaker:
-    """Provides static methods to build dialog windows"""
-
-    @staticmethod
-    def about_app_dialog():
-        """Launch an About dialog window"""
-        dialog = Gtk.AboutDialog.new()
-        dialog.set_program_name("Word Agent")
-        dialog.set_authors(["Sam Hatfield", None])
-        dialog.set_version("0.1")
-        dialog.set_website("https://github.com/sehqlr/word-agent")
-        dialog.set_website_label("Fork us on GitHub!")
-        dialog.set_comments("A minimal text editor with a big future.")
-        response = dialog.run()
-        if response:
-            print("About closed")
-            dialog.destroy()
-
-    @staticmethod
-    def open_file_dialog():
-        """Launch a File/Open dialog window"""
-        dialog = Gtk.FileChooserDialog("Open a project", None,
-            Gtk.FileChooserAction.OPEN,
-            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-             Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
-        response = dialog.run()
-        if response == Gtk.ResponseType.OK:
-            print("Open clicked")
-            project_name = dialog.get_filename()
-            dialog.destroy()
-        if response == Gtk.ResponseType.CANCEL:
-            print("Cancel clicked")
-            dialog.destroy()
-        return project_file
-
-    @staticmethod
-    def saveas_file_dialog(text):
-        """Launch a File/Save dialog window"""
-        dialog = Gtk.FileChooserDialog("Save your project", None,
-            Gtk.FileChooserAction.SAVE,
-            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-             Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
-        response = dialog.run()
-        if response == Gtk.ResponseType.OK:
-            print("Save clicked")
-            project_name = dialog.get_filename()
-            dialog.destroy()
-        if response == Gtk.ResponseType.CANCEL:
-            print("Cancel clicked")
-            dialog.destory()
-        return project_file
-
-
-class SignalHandler:
-    """Handles user events and file IO"""
-    # TODO: Transistion this class to error handling and logging after v0.2. Each handler should have less than 10 lines of code, except for error checking.
-    def __init__(self, segment):
-        self.seg = segment
-        self.file_is_saved_as = False
-        self.msg = "HANDLER: "
-
-        # adding custom signal here
-        sig_id = self.seg.buffer.connect("changed", self.buffer_changed)
-        self.sig_buffer_changed = sig_id
-
-    def gtk_main_quit(self, *args):
-        print(self.msg, "gtk_main_quit")
-        Gtk.main_quit(*args)
-
-    def on_buffer_changed(self, widget):
-        """Custom signal for Segment.buffer"""
-        print(self.msg, "on_buffer_changed")
-        self.seg.autosave()
-
-    def on_newButton_clicked(self, widget):
-        print(self.msg, "on_newButton_clicked")
-        self.seg = Segment()
-        self.file_is_saved_as = False
-
-    def on_openButton_clicked(self, widget):
-        print(self.msg, "on_openButton_clicked")
-        filename = DialogMaker.open_file_dialog()
-        content = Segment.read_from_file(filename)
-        self.seg = Segment(content)
-        self.file_is_saved_as = True
-
-    def on_saveButton_clicked(self, widget):
-        print(self.msg, "on_saveButton_clicked")
-        if self.file_is_saved_as is not True:
-            self.pf = DialogMaker.saveas_file_dialog(self.bfr.curr)
-        else:
-            self.pf.write(self.bfr.curr)
-
-    def on_saveasButton_clicked(self, widget):
-        print(self.msg, "on_saveButton_clicked")
-        self.pf = DialogMaker.saveas_file_dialog(self.bfr.curr)
-        self.file_is_saved_as = True
-
-    def on_undoButton_clicked(self, widget):
-        print(self.msg, "on_undoButton_clicked")
-        with self.bfr.handler_block(self.sig_buffer_changed):
-            self.seg.undo()
-
-    def on_redoButton_clicked(self, widget):
-        print(self.msg, "on_redoButton_clicked")
-        with self.bfr.handler_block(self.sig_buffer_changed):
-            self.seg.redo()
-
-    def on_cutButton_clicked(self, widget):
-        print(self.msg, "on_cutButton_clicked")
-        self.seg.cut()
-
-    def on_copyButton_clicked(self, widget):
-        print(self.msg, "on_copyButton_clicked")
-        self.seg.copy()
-
-    def on_pasteButton_clicked(self, widget):
-        print(self.msg, "on_pasteButton_clicked")
-        self.seg.paste()
-
-    def on_aboutButton_clicked(self, widget):
-        print(self.msg, "on_aboutButton_clicked")
-        DialogMaker.about_app_dialog()
-
 
 class Segment:
     """Organizes a segment, including its buffer, view, file, etc"""
-    def __init__(self, filename="untitled.wa" content=welcome_message):
+    def __init__(self, filename="untitled.wa", content=welcome_message):
         self._buffer = Gtk.TextBuffer()
         self._buffer.set_text(content)
 
-        self._view = Gtk.TextView.new_with_buffer(self.buffer)
+        self._view = Gtk.TextView.new_with_buffer(self._buffer)
 
         self._clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
         self._buffer.add_selection_clipboard(self._clipboard)
@@ -169,7 +45,6 @@ class Segment:
         with open(filename, "r") as textfile:
             for line in textfile:
                 content += line
-
         return content
 
     @property
@@ -193,6 +68,10 @@ class Segment:
         self._filename = value
 
     @property
+    def matcher(self):
+        return self._matcher
+
+    @property
     def edits(self):
         return self._edits
 
@@ -207,6 +86,9 @@ class Segment:
     @property
     def prev_edit(self):
         return self._edits[-1]
+
+    def add_view_to_widget(self, widget):
+        widget.add(self.view)
 
     # AUTOSAVE METHODS
     def text_comparison(self):
@@ -258,3 +140,188 @@ class Segment:
         with open(self.file_name, "w") as textfile:
             textfile.write(self.curr_text)
 
+class MainWindow(Gtk.Window):
+    """Main Logic for Word Agent"""
+    def __init__(self):
+        Gtk.Window.__init__(self, title="Word Agent")
+
+        self.connect("destroy", self.gtk_main_quit)
+
+        self.set_default_size(600, 600)
+
+        self.box = Gtk.Box.new(1 , 3)
+        self.add(self.box)
+        self.create_toolbar()
+
+        self.scroll = Gtk.ScrolledWindow.new(None, None)
+        self.box.pack_start(self.scroll, True, True, 0)
+
+        self.seg = Segment()
+
+        # adding custom signal here
+        sig_id = self.seg.buffer.connect("changed", self.buffer_changed)
+        self.sig_buffer_changed = sig_id
+
+        self.scroll.add(self.seg.view)
+
+        self.file_is_saved_as = False
+
+    def dialog_about(self):
+        """Launch an About dialog window"""
+        dialog = Gtk.AboutDialog.new()
+        dialog.set_program_name("Word Agent")
+        dialog.set_authors(["Sam Hatfield", None])
+        dialog.set_version("0.1")
+        dialog.set_website("https://github.com/sehqlr/word-agent")
+        dialog.set_website_label("Fork us on GitHub!")
+        dialog.set_comments("A minimal text editor with a big future.")
+        response = dialog.run()
+        if response:
+            print("About closed")
+            dialog.destroy()
+
+    def dialog_file_open(self):
+        """Launch a File/Open dialog window"""
+        dialog = Gtk.FileChooserDialog("Open a project", None,
+            Gtk.FileChooserAction.OPEN,
+            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+             Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            print("Open clicked")
+            project_name = dialog.get_filename()
+            dialog.destroy()
+        if response == Gtk.ResponseType.CANCEL:
+            print("Cancel clicked")
+            dialog.destroy()
+        return project_name
+
+    def dialog_file_save_as(self):
+        """Launch a File/Save dialog window"""
+        dialog = Gtk.FileChooserDialog("Save your project", None,
+            Gtk.FileChooserAction.SAVE,
+            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+             Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            print("Save clicked")
+            project_name = dialog.get_filename()
+            dialog.destroy()
+        if response == Gtk.ResponseType.CANCEL:
+            print("Cancel clicked")
+            dialog.destory()
+        return project_name
+
+    def create_toolbar(self):
+        toolbar = Gtk.Toolbar.new()
+        self.box.pack_start(toolbar, False, False, 0)
+
+        button_new = Gtk.ToolButton.new_from_stock(Gtk.STOCK_NEW)
+        button_new.connect("clicked", self.do_file_new)
+        toolbar.insert(button_new, 0)
+
+        button_open = Gtk.ToolButton.new_from_stock(Gtk.STOCK_OPEN)
+        button_open.connect("clicked", self.do_file_open)
+        toolbar.insert(button_open, 1)
+
+        button_save = Gtk.ToolButton.new_from_stock(Gtk.STOCK_SAVE)
+        button_save.connect("clicked", self.do_file_save)
+        toolbar.insert(button_save, 2)
+
+        button_saveas = Gtk.ToolButton.new_from_stock(Gtk.STOCK_SAVE_AS)
+        button_saveas.connect("clicked", self.do_file_saveas)
+        toolbar.insert(button_saveas, 3)
+
+        button_undo = Gtk.ToolButton.new_from_stock(Gtk.STOCK_UNDO)
+        button_undo.connect("clicked", self.do_edit_undo)
+        toolbar.insert(button_undo, 4)
+
+        button_redo = Gtk.ToolButton.new_from_stock(Gtk.STOCK_REDO)
+        button_redo.connect("clicked", self.do_edit_redo)
+        toolbar.insert(button_redo, 5)
+
+        button_cut = Gtk.ToolButton.new_from_stock(Gtk.STOCK_CUT)
+        button_cut.connect("clicked", self.do_edit_cut)
+        toolbar.insert(button_cut, 6)
+
+        button_copy = Gtk.ToolButton.new_from_stock(Gtk.STOCK_COPY)
+        button_copy.connect("clicked", self.do_edit_copy)
+        toolbar.insert(button_copy, 7)
+
+        button_paste = Gtk.ToolButton.new_from_stock(Gtk.STOCK_PASTE)
+        button_paste.connect("clicked", self.do_edit_paste)
+        toolbar.insert(button_paste, 8)
+
+        button_about = Gtk.ToolButton.new_from_stock(Gtk.STOCK_ABOUT)
+        button_about.connect("clicked", self.do_about)
+        toolbar.insert(button_about, 9)
+
+    # SIGNAL HANDLERS
+    def gtk_main_quit(self, *args):
+        print("HANDLER: gtk_main_quit")
+        Gtk.main_quit(*args)
+
+    def buffer_changed(self, widget):
+        """Custom signal for Segment.buffer"""
+        print("on_buffer_changed")
+        self.seg.autosave()
+
+    def do_file_new(self, widget):
+        print("HANDLER: do_file_new")
+        self.scroll.remove(self.seg.view)
+        del self.seg
+        self.seg = Segment()
+        self.scroll.add(self.seg.view)
+        self.seg.view.show()
+        self.file_is_saved_as = False
+
+    def do_file_open(self, widget):
+        print("HANDLER: on_openButton_clicked")
+        filename = self.dialog_file_open()
+        content = Segment.read_from_file(filename)
+        self.seg = Segment(content)
+        self.file_is_saved_as = True
+
+    def do_file_save(self, widget):
+        print("HANDLER: on_saveButton_clicked")
+        if self.file_is_saved_as is not True:
+            self.seg.filename = self.dialog_file_save_as()
+        self.seg.write_to_file()
+        self.file_is_saved_as = True
+
+    def do_file_saveas(self, widget):
+        print("HANDLER: on_saveasButton_clicked")
+        self.seg.file_name = self.dialog_file_save_as()
+        self.seg.write_to_file()
+        self.file_is_saved_as = True
+
+    def do_edit_undo(self, widget):
+        print("HANDLER: on_undoButton_clicked")
+        with self.seg.buffer.handler_block(self.sig_buffer_changed):
+            self.seg.undo()
+
+    def do_edit_redo(self, widget):
+        print("HANDLER: on_redoButton_clicked")
+        with self.seg.buffer.handler_block(self.sig_buffer_changed):
+            self.seg.redo()
+
+    def do_edit_cut(self, widget):
+        print("HANDLER: on_cutButton_clicked")
+        self.seg.cut()
+
+    def do_edit_copy(self, widget):
+        print("HANDLER: on_copyButton_clicked")
+        self.seg.copy()
+
+    def do_edit_paste(self, widget):
+        print("HANDLER: on_pasteButton_clicked")
+        self.seg.paste()
+
+    def do_about(self, widget):
+        print("HANDLER: on_aboutButton_clicked")
+        self.dialog_about()
+
+if __name__ is "__main__":
+    win = MainWindow()
+    win.show_all()
+    Gtk.main()
