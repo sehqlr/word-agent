@@ -137,7 +137,7 @@ class Segment:
 
     # NEW/OPEN/SAVE BUTTON METHODS
     def write_to_file(self):
-        with open(self.file_name, "w") as textfile:
+        with open(self.filename, "w") as textfile:
             textfile.write(self.curr_text)
 
 class MainWindow(Gtk.Window):
@@ -156,15 +156,16 @@ class MainWindow(Gtk.Window):
         self.scroll = Gtk.ScrolledWindow.new(None, None)
         self.box.pack_start(self.scroll, True, True, 0)
 
-        self.seg = Segment()
-
-        # adding custom signal here
-        sig_id = self.seg.buffer.connect("changed", self.buffer_changed)
-        self.sig_buffer_changed = sig_id
+        self.new_segment()
 
         self.scroll.add(self.seg.view)
 
         self.file_is_saved_as = False
+
+    def new_segment(self):
+        self.seg = Segment()
+        sig_id = self.seg.buffer.connect("changed", self.buffer_changed)
+        self.sig_buffer_changed = sig_id
 
     def dialog_about(self):
         """Launch an About dialog window"""
@@ -205,12 +206,12 @@ class MainWindow(Gtk.Window):
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             print("Save clicked")
-            project_name = dialog.get_filename()
+            filename = dialog.get_filename()
             dialog.destroy()
         if response == Gtk.ResponseType.CANCEL:
             print("Cancel clicked")
-            dialog.destory()
-        return project_name
+            dialog.destroy()
+        return filename
 
     def create_toolbar(self):
         toolbar = Gtk.Toolbar.new()
@@ -269,7 +270,6 @@ class MainWindow(Gtk.Window):
     def do_file_new(self, widget):
         print("HANDLER: do_file_new")
         self.scroll.remove(self.seg.view)
-        del self.seg
         self.seg = Segment()
         self.scroll.add(self.seg.view)
         self.seg.view.show()
@@ -277,9 +277,14 @@ class MainWindow(Gtk.Window):
 
     def do_file_open(self, widget):
         print("HANDLER: on_openButton_clicked")
+        self.scroll.remove(self.seg.view)
         filename = self.dialog_file_open()
         content = Segment.read_from_file(filename)
-        self.seg = Segment(content)
+        self.new_segment()
+        self.seg.filename = filename
+        self.seg.buffer.set_text(content)
+        self.scroll.add(self.seg.view)
+        self.seg.view.show()
         self.file_is_saved_as = True
 
     def do_file_save(self, widget):
@@ -291,7 +296,7 @@ class MainWindow(Gtk.Window):
 
     def do_file_saveas(self, widget):
         print("HANDLER: on_saveasButton_clicked")
-        self.seg.file_name = self.dialog_file_save_as()
+        self.seg.filename = self.dialog_file_save_as()
         self.seg.write_to_file()
         self.file_is_saved_as = True
 
