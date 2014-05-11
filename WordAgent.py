@@ -4,42 +4,42 @@ from gi.repository import Gtk, Gdk
 import io
 
 welcome_message = """
-    Welcome to the Word Agent, the novel project management app!
+Welcome to the Word Agent, the novel project management app!
 
-    Features currently in development:
-        Cut/Copy/Paste
-        New/Open files
-        Dialog boxes
+We are in v0.2, which means that current features and bugfixes will be
+worked on, not new features. New features to come in v0.3.
 
-    Next Feature in the works:
-        Project management
+If you have any questions, concerns, or comments, please create an
+issue on our GitHub page or email me with the details.
 
-    Future Features:
-        Version Control System integration
-        Cloud Collaboration with WebRTC
-        "Post Production" formatting (Scribus integration?)
+New features coming in v0.3:
+    Project management
+    Document rendering (to ODF at first, more formats coming later)
+
+Future Features:
+    Version Control System integration
+    Cloud Collaboration with WebRTC
+    "Post Production" formatting (e.i. Markdown)
 """
 
 
 class Segment:
-    """Organizes a segment, including its buffer, view, file, etc"""
+    """Encapsulates a segment, including its buffer, view, file, etc"""
+
     def __init__(self, filename="untitled.wa", content=welcome_message):
+        # creates TextBuffer, TextView, and Clipboard
         self._buffer = Gtk.TextBuffer()
         self._buffer.set_text(content)
-
         self._view = Gtk.TextView.new_with_buffer(self._buffer)
-
         self._clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
         self._buffer.add_selection_clipboard(self._clipboard)
 
         self._filename = filename
-
         self._matcher = SequenceMatcher()
-
-        # None is a sentinel value. The newline is for setting text.
         self._edits = deque([None, welcome_message])
 
     @staticmethod
+    # TODO: Reimplement this to update the text buffer directly
     def read_from_file(filename):
         content = ""
         with open(filename, "r") as textfile:
@@ -47,17 +47,26 @@ class Segment:
                 content += line
         return content
 
+    # coding 'private' members via properties, listed alphabetically
     @property
     def buffer(self):
         return self._buffer
 
     @property
-    def view(self):
-        return self._view
-
-    @property
     def clipboard(self):
         return self._clipboard
+
+    @property
+    def curr_text(self):
+        return self._buffer.props.text
+
+    @curr_text.setter
+    def curr_text(self, value):
+        self._buffer.set_text(value, len(value))
+
+    @property
+    def edits(self):
+        return self._edits
 
     @property
     def filename(self):
@@ -72,23 +81,12 @@ class Segment:
         return self._matcher
 
     @property
-    def edits(self):
-        return self._edits
-
-    @property
-    def curr_text(self):
-        return self._buffer.props.text
-
-    @curr_text.setter
-    def curr_text(self, value):
-        self._buffer.set_text(value, len(value))
-
-    @property
     def prev_edit(self):
         return self._edits[-1]
 
-    def add_view_to_widget(self, widget):
-        widget.add(self.view)
+    @property
+    def view(self):
+        return self._view
 
     # AUTOSAVE METHODS
     def text_comparison(self):
@@ -108,6 +106,7 @@ class Segment:
 
     # UNDO/REDO BUTTON METHODS
     def undo(self):
+        # TODO: Change this so things don't get duplicated
         self.edits.append(self.curr_text)
         self.edits.rotate(1)
         if self.prev_edit is not None:
@@ -140,8 +139,11 @@ class Segment:
         with open(self.filename, "w") as textfile:
             textfile.write(self.curr_text)
 
+    # TODO: Reimplement read_from_file here
+    # IDEA: rename methods to reflect names of other methods.
+
 class MainWindow(Gtk.Window):
-    """Main Logic for Word Agent"""
+    """Hardcodes basic UX"""
     def __init__(self):
         Gtk.Window.__init__(self, title="Word Agent")
 
@@ -167,6 +169,9 @@ class MainWindow(Gtk.Window):
         sig_id = self.seg.buffer.connect("changed", self.buffer_changed)
         self.sig_buffer_changed = sig_id
 
+    # DIALOG METHODS
+    # TODO: Hide dialogs instead of destroying them
+    # TODO: Add file type filters to FileChooser dialogs
     def dialog_about(self):
         """Launch an About dialog window"""
         dialog = Gtk.AboutDialog.new()
@@ -213,6 +218,8 @@ class MainWindow(Gtk.Window):
             dialog.destroy()
         return filename
 
+    # UI DEFINITION METHODS
+    # IDEA: Loading glade files and CSS?
     def create_toolbar(self):
         toolbar = Gtk.Toolbar.new()
         self.box.pack_start(toolbar, False, False, 0)
@@ -282,7 +289,7 @@ class MainWindow(Gtk.Window):
         content = Segment.read_from_file(filename)
         self.new_segment()
         self.seg.filename = filename
-        self.seg.buffer.set_text(content)
+        self.seg.curr_text = content
         self.scroll.add(self.seg.view)
         self.seg.view.show()
         self.file_is_saved_as = True
