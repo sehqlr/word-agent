@@ -44,7 +44,7 @@ Up until Version 1.1, this program will have novels as the target project type. 
 
 VCS Integration will feature Git, Mercurial, and other VCS programs. This will be useful for collaborative projects, and for a nice history feature.
 
-Mercurial will be the only one supported until version 1.3, since the project will be written in Python, and I can include the Mercurial scripts with the program as an additional module. My assumption is that many of the users of this program will not have VCS programs on their machines by default. However, starting in version 1.3, I will build support for the common ones, primarily Git.
+Mercurial will be the only one supported until version 1.3, since the project will be written in Python, and I can include the Mercurial scripts with the program as an additional module (I think). My assumption is that many of the users of this program will not have VCS programs on their machines by default. However, starting in version 1.3, I will build support for the common ones, primarily Git.
 
 ##### Cloud Collaboration (starting v0.7)
 
