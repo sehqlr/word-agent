@@ -180,7 +180,7 @@ class MainWindow(Gtk.Window):
         self.file_is_saved_as = False
 
     def new_segment(self):
-        """Creates segment and connects it's custom signal"""
+        """Creates segment and connects its custom signal"""
         self.seg = Segment()
         sig_id = self.seg.buffer.connect("changed", self.buffer_changed)
         self.sig_buffer_changed = sig_id
@@ -300,7 +300,7 @@ class MainWindow(Gtk.Window):
     # autosave handler
     def buffer_changed(self, widget):
         """Custom signal for Segment.buffer"""
-        print("on_buffer_changed")
+        print("HANDLER: on_buffer_changed")
         self.seg.autosave()
 
     # file handlers
