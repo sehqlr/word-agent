@@ -174,6 +174,7 @@ class MainWindow(Gtk.Window):
         self.box.pack_start(self.scroll, True, True, 0)
 
         # create a segment, and add the TextView to scrolled window
+        self.sig_buffer_changed = None
         self.new_segment()
         self.scroll.add(self.seg.view)
 
