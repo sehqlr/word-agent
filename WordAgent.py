@@ -174,7 +174,8 @@ class MainWindow(Gtk.Window):
         self.box.pack_start(self.scroll, True, True, 0)
 
         # create a segment, and add the TextView to scrolled window
-        self.sig_buffer_changed = None
+        self.seg = "Not created yet"
+        self.sig_buffer_changed = "Not created yet"
         self.new_segment()
         self.scroll.add(self.seg.view)
 
@@ -309,14 +310,14 @@ class MainWindow(Gtk.Window):
         """Create a new Segment"""
         print("HANDLER: do_file_new")
         self.scroll.remove(self.seg.view)
-        self.seg = Segment()
+        self.new_segment()
         self.scroll.add(self.seg.view)
         self.seg.view.show()
         self.file_is_saved_as = False
 
     def do_file_open(self, widget):
         """Loads text from a file and creates Segment with that text"""
-        print("HANDLER: on_openButton_clicked")
+        print("HANDLER: do_file_open")
         self.scroll.remove(self.seg.view)
         filename = self.dialog_file_open()
         content = Segment.read_from_file(filename)
@@ -329,7 +330,7 @@ class MainWindow(Gtk.Window):
 
     def do_file_save(self, widget):
         """Overwrites old file, prompts file/save-as if needed"""
-        print("HANDLER: on_saveButton_clicked")
+        print("HANDLER: do_file_save")
         if self.file_is_saved_as is not True:
             self.seg.filename = self.dialog_file_save_as()
         self.seg.write_to_file()
@@ -337,41 +338,41 @@ class MainWindow(Gtk.Window):
 
     def do_file_saveas(self, widget):
         """Ensures file/save-as prompt for do_file_save"""
-        print("HANDLER: on_saveasButton_clicked")
+        print("HANDLER: do_file_saveas")
         self.file_is_saved_as = False
         self.do_file_save()
 
     # edit handlers
     def do_edit_undo(self, widget):
         """Blocks custom signal for buffer to traverse autosave deque"""
-        print("HANDLER: on_undoButton_clicked")
+        print("HANDLER: do_edit_undo")
         with self.seg.buffer.handler_block(self.sig_buffer_changed):
             self.seg.undo()
 
     def do_edit_redo(self, widget):
         """Moves the opposite way of undo in autosave deque"""
-        print("HANDLER: on_redoButton_clicked")
+        print("HANDLER: do_edit_redo")
         with self.seg.buffer.handler_block(self.sig_buffer_changed):
             self.seg.redo()
 
     def do_edit_cut(self, widget):
         """Implements basic edit/cut"""
-        print("HANDLER: on_cutButton_clicked")
+        print("HANDLER: do_edit_cut")
         self.seg.cut()
 
     def do_edit_copy(self, widget):
         """Implements basic edit/copy"""
-        print("HANDLER: on_copyButton_clicked")
+        print("HANDLER: do_edit_copy")
         self.seg.copy()
 
     def do_edit_paste(self, widget):
         """Implements basic edit/paste"""
-        print("HANDLER: on_pasteButton_clicked")
+        print("HANDLER: do_edit_paste")
         self.seg.paste()
 
     def do_about(self, widget):
         """Launches about dialog from MainWindow"""
-        print("HANDLER: on_aboutButton_clicked")
+        print("HANDLER: on_about")
         self.dialog_about()
 
 if __name__ is "__main__":
