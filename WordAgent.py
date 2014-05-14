@@ -172,37 +172,24 @@ class MainWindow(Gtk.Window):
         self.scroll = Gtk.ScrolledWindow.new(None, None)
         self.box.pack_start(self.scroll, True, True, 0)
 
-        # create empty-ish values for objects updated later on
+        # creates new segment, connecting its custom signal
         self.seg = Segment()
-        self.sig_buffer_changed = "Not created yet"
-
-        # start with File/New
-        self.do_file_new(self)
-
-    def new_segment(self, filename=None):
-        """Creates segment and connects its custom signal"""
-        # removes old segment's view from self.scroll
-        # TODO: This code throws Gtk-CRITIAL errors when the app runs.
-        for c in self.scroll.get_children():
-            if c is self.seg.view:
-                self.scroll.remove(self.seg.view)
-
-        # effectively deletes old segment
-        self.seg = None
-
-        # creates new segment, reading content from a file if provided
-        self.seg = Segment()
-        if filename:
-            self.seg.filename = filename
-            self.seg.open()
-
-        # connects custom signal for when TextBuffer object is changed
         sig_id = self.seg.buffer.connect("changed", self.buffer_changed)
         self.sig_buffer_changed = sig_id
 
-        # add view to scroll and showing it
+        # add view to scroll and show it
         self.scroll.add(self.seg.view)
         self.seg.view.show()
+
+    def set_segment(self, filename):
+        if filename:
+            self.seg.filename = filename
+            self.seg.open()
+        else:
+            self.seg.filename = "untitled"
+            self.curr_text = welcome_message
+        self.seg.edits.clear()
+        self.seg.edits.append(None)
 
     # DIALOG METHODS
     # IDEA: Hide dialogs? That would require self.dialog-type members
@@ -322,14 +309,14 @@ class MainWindow(Gtk.Window):
     def do_file_new(self, widget):
         """Create a new Segment"""
         print("HANDLER: do_file_new")
-        self.new_segment()
+        self.set_segment()
         self.file_is_saved_as = False
 
     def do_file_open(self, widget):
         """Loads text from a file and creates Segment with that text"""
         print("HANDLER: do_file_open")
         filename = self.dialog_file_open()
-        self.new_segment(filename)
+        self.set_segment(filename)
         self.file_is_saved_as = True
 
     def do_file_save(self, widget):
