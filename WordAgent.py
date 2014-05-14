@@ -26,7 +26,7 @@ Future Features:
 class Segment:
     """Encapsulates a segment, including its buffer, view, file, etc"""
 
-    def __init__(self, filename="untitled.wa", content=welcome_message):
+    def __init__(self, filename="untitled", content=welcome_message):
 
         # creates TextBuffer, TextView, and Clipboard
         self._buffer = Gtk.TextBuffer()
@@ -44,16 +44,6 @@ class Segment:
 
         # edits is the double ended queue (deque) for autosave feature
         self._edits = deque([None, welcome_message])
-
-    @staticmethod
-    # TODO: Reimplement this to update the text buffer directly
-    def read_from_file(filename):
-        """Returns content of text file in one string"""
-        content = ""
-        with open(filename, "r") as textfile:
-            for line in textfile:
-                content += line
-        return content
 
     # coding 'private' members via properties, listed alphabetically
     @property
@@ -85,6 +75,10 @@ class Segment:
         self._filename = value
 
     @property
+    def base_edit(self):
+        self._edits[0]
+
+    @property
     def matcher(self):
         return self._matcher
 
@@ -96,34 +90,33 @@ class Segment:
     def view(self):
         return self._view
 
-    # AUTOSAVE METHODS
-    def text_comparison(self):
-        """Compares curr and prev edits, returns a ratio of change"""
-        self.matcher.set_seqs(self.curr_text, self.prev_edit)
-        ratio = self.matcher.quick_ratio()
-        print("matcher ratio: ", ratio)
-        return ratio
-
+    # AUTOSAVE METHOD
     def autosave(self):
         """If enough changes have been made, add text to _edits"""
         # IDEA: percentage here could be changed in Settings.
-        if self.text_comparison() < 0.99:
+        self.matcher.set_seqs(self.curr_text, self.prev_edit)
+        ratio = self.matcher.quick_ratio()
+        if ratio < 0.99:
+            print("Text autosaved")
             self.edits.append(self.curr_text)
 
         # clears out old edits using sentinel value
-        while self.edits[0] is not None:
+        while self.base_edit is not None:
             self.edits.popleft()
 
     # UNDO/REDO BUTTON METHODS
     def undo(self):
         """Reverts TextBuffer to earlier state, from the edits deque"""
         # TODO: Change this so things don't get duplicated
-        self.edits.append(self.curr_text)
-        self.edits.rotate(1)
+        if self.base_edit is None:
+            self.edits.append(self.curr_text)
+            self.edits.rotate(1)
         if self.prev_edit is not None:
             self.edits.rotate(1)
             if self.prev_edit is not None:
                 self.curr_text = self.prev_edit
+        elif self.prev_edit is None:
+            print("Nothing to undo")
 
     def redo(self):
         """Reverts TextBuffer to later state, if it still exists"""
@@ -131,8 +124,8 @@ class Segment:
             self.edits.rotate(-1)
             if self.prev_edit is not None:
                 self.curr_text = self.prev_edit
-        elif self.edits[0] is None:
-            pass
+        elif self.base_edit is None:
+            print("Nothing to redo")
 
     # CUT/COPY/PASTE BUTTON METHODS
     def cut(self):
@@ -150,13 +143,19 @@ class Segment:
         self.buffer.paste_clipboard(self.clipboard, None, True)
 
     # NEW/OPEN/SAVE BUTTON METHODS
-    def write_to_file(self):
-        """Write content to file"""
+    def save(self):
+        """Write curr_text to file"""
         with open(self.filename, "w") as textfile:
             textfile.write(self.curr_text)
 
-    # TODO: Reimplement read_from_file here
-    # IDEA: rename methods to 'save' and 'open'.
+    def open(self):
+        """Opens and reads the text contents of self.filename"""
+        # NOTE: Make sure you set self.filename to desired file first!
+        content = ""
+        with open(self.filename, "r") as textfile:
+            for line in textfile:
+                content += line
+        self.curr_text = content
 
 class MainWindow(Gtk.Window):
     """Hardcodes basic UX for Word Agent"""
@@ -173,22 +172,40 @@ class MainWindow(Gtk.Window):
         self.scroll = Gtk.ScrolledWindow.new(None, None)
         self.box.pack_start(self.scroll, True, True, 0)
 
-        # create a segment, and add the TextView to scrolled window
-        self.seg = "Not created yet"
-        self.sig_buffer_changed = "Not created yet"
-        self.new_segment()
-        self.scroll.add(self.seg.view)
-
-        self.file_is_saved_as = False
-
-    def new_segment(self):
-        """Creates segment and connects its custom signal"""
+        # create empty-ish values for objects updated later on
         self.seg = Segment()
+        self.sig_buffer_changed = "Not created yet"
+
+        # start with File/New
+        self.do_file_new(self)
+
+    def new_segment(self, filename=None):
+        """Creates segment and connects its custom signal"""
+        # removes old segment's view from self.scroll
+        # TODO: This code throws Gtk-CRITIAL errors when the app runs.
+        for c in self.scroll.get_children():
+            if c is self.seg.view:
+                self.scroll.remove(self.seg.view)
+
+        # effectively deletes old segment
+        self.seg = None
+
+        # creates new segment, reading content from a file if provided
+        self.seg = Segment()
+        if filename:
+            self.seg.filename = filename
+            self.seg.open()
+
+        # connects custom signal for when TextBuffer object is changed
         sig_id = self.seg.buffer.connect("changed", self.buffer_changed)
         self.sig_buffer_changed = sig_id
 
+        # add view to scroll and showing it
+        self.scroll.add(self.seg.view)
+        self.seg.view.show()
+
     # DIALOG METHODS
-    # TODO: Hide dialogs instead of destroying them
+    # IDEA: Hide dialogs? That would require self.dialog-type members
     # TODO: Add file type filters to FileChooser dialogs
     def dialog_about(self):
         """Launch an About dialog window"""
@@ -198,7 +215,7 @@ class MainWindow(Gtk.Window):
         dialog.set_version("0.2")
         dialog.set_website("https://github.com/sehqlr/word-agent")
         dialog.set_website_label("Fork us on GitHub!")
-        dialog.set_comments("A minimal text editor with a big future.")
+        dialog.set_comments("A simple text editor with a big future.")
         response = dialog.run()
         if response:
             print("About closed")
@@ -212,13 +229,11 @@ class MainWindow(Gtk.Window):
              Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
-            print("Open clicked")
-            project_name = dialog.get_filename()
+            filename = dialog.get_filename()
             dialog.destroy()
         if response == Gtk.ResponseType.CANCEL:
-            print("Cancel clicked")
             dialog.destroy()
-        return project_name
+        return filename
 
     def dialog_file_save_as(self):
         """Launch a File/Save dialog window"""
@@ -228,11 +243,9 @@ class MainWindow(Gtk.Window):
              Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
-            print("Save clicked")
             filename = dialog.get_filename()
             dialog.destroy()
         if response == Gtk.ResponseType.CANCEL:
-            print("Cancel clicked")
             dialog.destroy()
         return filename
 
@@ -309,23 +322,14 @@ class MainWindow(Gtk.Window):
     def do_file_new(self, widget):
         """Create a new Segment"""
         print("HANDLER: do_file_new")
-        self.scroll.remove(self.seg.view)
         self.new_segment()
-        self.scroll.add(self.seg.view)
-        self.seg.view.show()
         self.file_is_saved_as = False
 
     def do_file_open(self, widget):
         """Loads text from a file and creates Segment with that text"""
         print("HANDLER: do_file_open")
-        self.scroll.remove(self.seg.view)
         filename = self.dialog_file_open()
-        content = Segment.read_from_file(filename)
-        self.new_segment()
-        self.seg.filename = filename
-        self.seg.curr_text = content
-        self.scroll.add(self.seg.view)
-        self.seg.view.show()
+        self.new_segment(filename)
         self.file_is_saved_as = True
 
     def do_file_save(self, widget):
@@ -374,8 +378,3 @@ class MainWindow(Gtk.Window):
         """Launches about dialog from MainWindow"""
         print("HANDLER: on_about")
         self.dialog_about()
-
-if __name__ is "__main__":
-    win = MainWindow()
-    win.show_all()
-    Gtk.main()
