@@ -19,11 +19,13 @@ There are currently no keyboard shortcuts, nor is there any formatting.
 ##### Novel Project Management (starting v0.3):
 
 * Segment centric
+
 Your large text file is kept in smaller "segments" with an internal
 database to keep track of where they belong in the scheme of the larger
 document. These files will not contain implicit formatting or metadata
 
 * Project rendering and formatting
+
 Word Agent will "render" the larger document by concatenating
 the segments together when the full project is needed. Additionally,
 the document will be formatted at this stage, with either an internal
@@ -31,15 +33,18 @@ module using Markdown or other lightweight markup, or external tools
 at the user's option.
 
 * Export to eReader formats
+
 Word Agent will export to eReader formats such as ePub and Mobi, as
 well as PDF and related page formats.
 
 * Character Database
+
 Special segments that contain a character description, and each segment
 of the project that includes a reference to that character. Another
 idea is to support photographs and images to the character's entry.
 
 * Novel support, others later
+
 Up until Version 1.1, this program will have novels as the target
 project type. Support for academic papers, stage/screenplays, and other
 long works will be supported starting in version 1.1.
