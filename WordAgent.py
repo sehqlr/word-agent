@@ -43,7 +43,7 @@ class Segment:
         self._matcher = SequenceMatcher()
 
         # edits is the double ended queue (deque) for autosave feature
-        self._edits = deque([None, welcome_message])
+        self._edits = deque([None, content])
 
     # coding 'private' members via properties, listed alphabetically
     @property
