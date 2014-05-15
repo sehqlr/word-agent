@@ -49,18 +49,17 @@ Up until Version 1.1, this program will have novels as the target
 project type. Support for academic papers, stage/screenplays, and other
 long works will be supported starting in version 1.1.
 
-##### Version Control System Integration (starting v0.5)
+##### Version Control System (starting v0.5)
 
-VCS Integration will feature Git, Mercurial, and other VCS programs.
-This will be useful for collaborative projects, and for a nice history
-feature.
+This feature will take ideas from programs like Git and Mercurial
+for version control of the project. Integration with external tools
+will begin in v1.3.
 
-Mercurial will be the only one supported until version 1.3, since the
-project will be written in Python, and I can include the Mercurial
-scripts with the program as an additional module (I think). My
-assumption is that many of the users of this program will not have VCS
-programs on their machines by default. However, starting in version 1.3,
-I will build support for the common ones, primarily Git.
+My original plan was to include Mercurial as a part of the script, but
+it looks like that Mercurial is based on Python 2.x. 
+
+With that in mind, I will design a simple VCS module for internal use.
+It will probably use difflib quite a lot.
 
 ##### Cloud Collaboration (starting v0.7)
 
