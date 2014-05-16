@@ -186,6 +186,7 @@ class EditorWindow(Gtk.Window):
         self.box.pack_start(self.scroll, True, True, 0)
 
         self.view = Gtk.TextView.new()
+        self.view.set_wrap_mode(2)
         self.scroll.add(self.view)
 
     # TODO: create properties to access objects in EditorWindow
@@ -216,9 +217,10 @@ class EditorWindow(Gtk.Window):
         if response == Gtk.ResponseType.OK:
             filename = dialog.get_filename()
             dialog.destroy()
+            return filename
         if response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
-        return filename
+            return None
 
     def dialog_file_save_as(self):
         """Launch a File/Save dialog window"""
@@ -230,9 +232,10 @@ class EditorWindow(Gtk.Window):
         if response == Gtk.ResponseType.OK:
             filename = dialog.get_filename()
             dialog.destroy()
+            return filename
         if response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
-        return filename
+            return None
 
     # UI DEFINITION METHODS
     # IDEA: Loading glade files and CSS?
@@ -339,23 +342,26 @@ class Application:
     def do_file_new(self, widget):
         """Create a new Segment, with default filename and content"""
         print("HANDLER: do_file_new")
-        change_buffer()
+        self.change_buffer()
         self.file_is_saved_as = False
 
     def do_file_open(self, widget):
         """Loads text from a file and creates Segment with that text"""
         print("HANDLER: do_file_open")
         filename = self.win.dialog_file_open()
-        self.change_buffer(filename)
-        self.file_is_saved_as = True
+        if filename:
+            self.change_buffer(filename)
+            self.file_is_saved_as = True
 
     def do_file_save(self, widget):
         """Overwrites old file, prompts file/save-as if needed"""
         print("HANDLER: do_file_save")
         if self.file_is_saved_as is False:
             self.seg.filename = self.win.dialog_file_save_as()
-        write_to_file(self.seg.filename, self.seg.curr_text)
-        self.file_is_saved_as = True
+
+        if self.seg.filename:
+            write_to_file(self.seg.filename, self.seg.curr_text)
+            self.file_is_saved_as = True
 
     def do_file_saveas(self, widget):
         """Ensures file/save-as prompt for do_file_save"""

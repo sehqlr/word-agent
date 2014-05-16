@@ -12,12 +12,14 @@ for proprietary use, please contact me.
 
 ### Instructions
 
-Word Agent currently exists as a Python script run from the commandline.
-It is based on Python 3.x and the Python GI API, so please have these
-packages installed. So far, this is Linux only (including the CS50
-Appliance v19). I claim no Windows, OSX, or BSD support.
+To use the program, run `python3 word-agent.py` on the commandline. The
+console should have debugging output like "Text autosaved."
 
-To use the program, the `run.py` script will serve you best.
+It is based on Python 3.x and the Python GI API, so please have these
+packages installed. So far, this is Linux only, including the CS50
+Appliance. I claim no Windows, OSX, or BSD support. (However, a
+good friend has told me it will run from Windows.)
+
 I plan on creating unit tests in the future, as well has proper
 setup/installation scripts.
 
