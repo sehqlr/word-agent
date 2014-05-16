@@ -3,6 +3,7 @@ from difflib import SequenceMatcher
 from gi.repository import Gtk, Gdk
 import io
 
+# TODO: keep welcome message updated!
 welcome_message = """
 Welcome to the Word Agent, the novel project management app!
 
@@ -22,16 +23,32 @@ Future Features:
     "Post Production" formatting (e.i. Markdown)
 """
 
+# UTILITY FUNCTIONS
+
+def read_from_file(filename):
+    """Opens, reads, and returns the text contents of filename"""
+    content = ""
+    with open(filename, "r") as textfile:
+        for line in textfile:
+            content += line
+    return content
+
+def write_to_file(filename, content):
+    """Writes content to filename on disk"""
+    with open(filename, "w") as f:
+        f.write(content)
+
+# CLASS DEFINITIONS
 
 class Segment:
-    """Encapsulates a segment, including its buffer, view, file, etc"""
+    """Model for Word Agent. Encapsulates a segment"""
 
-    def __init__(self, filename="untitled", content=welcome_message):
+    def __init__(self, filename, content):
 
-        # creates TextBuffer, TextView, and Clipboard
+        # creates TextBuffer and Clipboard
         self._buffer = Gtk.TextBuffer()
         self._buffer.set_text(content)
-        self._view = Gtk.TextView.new_with_buffer(self._buffer)
+
         self._clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
         self._buffer.add_selection_clipboard(self._clipboard)
 
@@ -44,6 +61,14 @@ class Segment:
 
         # edits is the double ended queue (deque) for autosave feature
         self._edits = deque([None, content])
+
+        # connecting custom signal
+        self.sig_id = self._buffer.connect("changed", self.autosave)
+
+    @staticmethod
+    def new(filename="untitled", content=welcome_message):
+        new = Segment(filename, content)
+        return new
 
     # coding 'private' members via properties, listed alphabetically
     @property
@@ -86,14 +111,12 @@ class Segment:
     def prev_edit(self):
         return self._edits[-1]
 
-    @property
-    def view(self):
-        return self._view
-
     # AUTOSAVE METHOD
-    def autosave(self):
-        """If enough changes have been made, add text to _edits"""
+    def autosave(self, widget):
+        """If enough changes have been made, add text to edits"""
         # IDEA: percentage here could be changed in Settings.
+        if self.prev_edit is None:
+            self.edits.append("")
         self.matcher.set_seqs(self.curr_text, self.prev_edit)
         ratio = self.matcher.quick_ratio()
         if ratio < 0.99:
@@ -142,57 +165,32 @@ class Segment:
         """Basic edit/paste function"""
         self.buffer.paste_clipboard(self.clipboard, None, True)
 
-    # NEW/OPEN/SAVE BUTTON METHODS
-    def save(self):
-        """Write curr_text to file"""
-        with open(self.filename, "w") as textfile:
-            textfile.write(self.curr_text)
 
-    def open(self):
-        """Opens and reads the text contents of self.filename"""
-        # NOTE: Make sure you set self.filename to desired file first!
-        content = ""
-        with open(self.filename, "r") as textfile:
-            for line in textfile:
-                content += line
-        self.curr_text = content
-
-class MainWindow(Gtk.Window):
-    """Hardcodes basic UX for Word Agent"""
+class EditorWindow(Gtk.Window):
+    """View for word-agent. Hardcodes UI definitions"""
     def __init__(self):
         # basic init stuff for window
         Gtk.Window.__init__(self, title="Word Agent")
-        self.connect("destroy", self.gtk_main_quit)
+        self.connect("destroy", Gtk.main_quit)
         self.set_default_size(600, 600)
 
         # create the Box container and add toolbar and scrolled window
         self.box = Gtk.Box.new(1 , 3)
         self.add(self.box)
+
+        # button_dict keeps a list of button objects, and their handlers
+        self.buttons = {}
         self.create_toolbar()
+
         self.scroll = Gtk.ScrolledWindow.new(None, None)
         self.box.pack_start(self.scroll, True, True, 0)
 
-        # creates new segment, connecting its custom signal
-        self.seg = Segment()
-        sig_id = self.seg.buffer.connect("changed", self.buffer_changed)
-        self.sig_buffer_changed = sig_id
+        self.view = Gtk.TextView.new()
+        self.scroll.add(self.view)
 
-        # add view to scroll and show it
-        self.scroll.add(self.seg.view)
-        self.seg.view.show()
-
-    def set_segment(self, filename):
-        if filename:
-            self.seg.filename = filename
-            self.seg.open()
-        else:
-            self.seg.filename = "untitled"
-            self.curr_text = welcome_message
-        self.seg.edits.clear()
-        self.seg.edits.append(None)
+    # TODO: create properties to access objects in EditorWindow
 
     # DIALOG METHODS
-    # IDEA: Hide dialogs? That would require self.dialog-type members
     # TODO: Add file type filters to FileChooser dialogs
     def dialog_about(self):
         """Launch an About dialog window"""
@@ -238,93 +236,125 @@ class MainWindow(Gtk.Window):
 
     # UI DEFINITION METHODS
     # IDEA: Loading glade files and CSS?
+
     def create_toolbar(self):
-        """Loads ten Gtk Stock toolbar buttons, connects signals"""
-        toolbar = Gtk.Toolbar.new()
-        self.box.pack_start(toolbar, False, False, 0)
+        """Loads toolbar with 10 stock buttons, adds them to dict"""
+        self.toolbar = Gtk.Toolbar.new()
+        self.box.pack_start(self.toolbar, False, False, 0)
+        buttons = self.buttons
 
         # NEW button
         button_new = Gtk.ToolButton.new_from_stock(Gtk.STOCK_NEW)
-        button_new.connect("clicked", self.do_file_new)
-        toolbar.insert(button_new, 0)
+        self.toolbar.insert(button_new, 0)
+        self.buttons["button_new"] = button_new
 
         # OPEN button
         button_open = Gtk.ToolButton.new_from_stock(Gtk.STOCK_OPEN)
-        button_open.connect("clicked", self.do_file_open)
-        toolbar.insert(button_open, 1)
+        self.toolbar.insert(button_open, 1)
+        buttons["button_open"] = button_open
 
         # SAVE button
         button_save = Gtk.ToolButton.new_from_stock(Gtk.STOCK_SAVE)
-        button_save.connect("clicked", self.do_file_save)
-        toolbar.insert(button_save, 2)
+        self.toolbar.insert(button_save, 2)
+        buttons["button_save"] = button_save
 
         # SAVE AS button
         button_saveas = Gtk.ToolButton.new_from_stock(Gtk.STOCK_SAVE_AS)
-        button_saveas.connect("clicked", self.do_file_saveas)
-        toolbar.insert(button_saveas, 3)
+        self.toolbar.insert(button_saveas, 3)
+        buttons["button_saveas"] = button_saveas
 
         # UNDO button
         button_undo = Gtk.ToolButton.new_from_stock(Gtk.STOCK_UNDO)
-        button_undo.connect("clicked", self.do_edit_undo)
-        toolbar.insert(button_undo, 4)
+        self.toolbar.insert(button_undo, 4)
+        buttons["button_undo"] = button_undo
 
         # REDO button
         button_redo = Gtk.ToolButton.new_from_stock(Gtk.STOCK_REDO)
-        button_redo.connect("clicked", self.do_edit_redo)
-        toolbar.insert(button_redo, 5)
+        self.toolbar.insert(button_redo, 5)
+        buttons["button_redo"] = button_redo
 
         # CUT button
         button_cut = Gtk.ToolButton.new_from_stock(Gtk.STOCK_CUT)
-        button_cut.connect("clicked", self.do_edit_cut)
-        toolbar.insert(button_cut, 6)
+        self.toolbar.insert(button_cut, 6)
+        buttons["button_cut"] = button_cut
 
         # COPY button
         button_copy = Gtk.ToolButton.new_from_stock(Gtk.STOCK_COPY)
-        button_copy.connect("clicked", self.do_edit_copy)
-        toolbar.insert(button_copy, 7)
+        self.toolbar.insert(button_copy, 7)
+        buttons["button_copy"] = button_copy
 
         # PASTE button
         button_paste = Gtk.ToolButton.new_from_stock(Gtk.STOCK_PASTE)
-        button_paste.connect("clicked", self.do_edit_paste)
-        toolbar.insert(button_paste, 8)
+        self.toolbar.insert(button_paste, 8)
+        buttons["button_paste"] = button_paste
 
         # ABOUT button
         button_about = Gtk.ToolButton.new_from_stock(Gtk.STOCK_ABOUT)
-        button_about.connect("clicked", self.do_about)
-        toolbar.insert(button_about, 9)
+        self.toolbar.insert(button_about, 9)
+        buttons["button_about"] = button_about
 
-    # SIGNAL HANDLERS
-    def gtk_main_quit(self, *args):
-        """End program methods"""
-        print("HANDLER: gtk_main_quit")
-        Gtk.main_quit(*args)
 
-    # autosave handler
-    def buffer_changed(self, widget):
-        """Custom signal for Segment.buffer"""
-        print("HANDLER: on_buffer_changed")
-        self.seg.autosave()
+class Application:
+    """Controller for Word Agent. Connects signals for window"""
+    def __init__(self):
+        self.seg = Segment.new()
+        self.win = EditorWindow()
+        self.win.view.set_buffer(self.seg.buffer)
 
-    # file handlers
+        # boolean for File/Save(as) functions
+        self.file_is_saved_as = False
+
+        self.handlers = {
+            "button_new": self.do_file_new,
+            "button_open": self.do_file_open,
+            "button_save": self.do_file_save,
+            "button_saveas": self.do_file_saveas,
+            "button_undo": self.do_edit_undo,
+            "button_redo": self.do_edit_redo,
+            "button_cut": self.do_edit_cut,
+            "button_copy": self.do_edit_copy,
+            "button_paste": self.do_edit_paste,
+            "button_about": self.do_about
+            }
+
+        self.connections()
+        self.win.show_all()
+
+    def connections(self):
+        for name, widget in self.win.buttons.items():
+            if name in self.handlers:
+                widget.connect("clicked", self.handlers[name])
+
+    def change_buffer(self, filename=None):
+        text = read_from_file(filename)
+        if text is "":
+            self.seg = Segment.new()
+            self.win.view.set_buffer(self.seg.buffer)
+        else:
+            self.seg = Segment.new(filename=filename, content=text)
+            self.win.view.set_buffer(self.seg.buffer)
+
+    # FILE handlers
+
     def do_file_new(self, widget):
-        """Create a new Segment"""
+        """Create a new Segment, with default filename and content"""
         print("HANDLER: do_file_new")
-        self.set_segment()
+        change_buffer()
         self.file_is_saved_as = False
 
     def do_file_open(self, widget):
         """Loads text from a file and creates Segment with that text"""
         print("HANDLER: do_file_open")
-        filename = self.dialog_file_open()
-        self.set_segment(filename)
+        filename = self.win.dialog_file_open()
+        self.change_buffer(filename)
         self.file_is_saved_as = True
 
     def do_file_save(self, widget):
         """Overwrites old file, prompts file/save-as if needed"""
         print("HANDLER: do_file_save")
-        if self.file_is_saved_as is not True:
-            self.seg.filename = self.dialog_file_save_as()
-        self.seg.write_to_file()
+        if self.file_is_saved_as is False:
+            self.seg.filename = self.win.dialog_file_save_as()
+        write_to_file(self.seg.filename, self.seg.curr_text)
         self.file_is_saved_as = True
 
     def do_file_saveas(self, widget):
@@ -333,17 +363,18 @@ class MainWindow(Gtk.Window):
         self.file_is_saved_as = False
         self.do_file_save()
 
-    # edit handlers
+    # EDIT handlers
+
     def do_edit_undo(self, widget):
         """Blocks custom signal for buffer to traverse autosave deque"""
         print("HANDLER: do_edit_undo")
-        with self.seg.buffer.handler_block(self.sig_buffer_changed):
+        with self.seg.buffer.handler_block(self.seg.sig_id):
             self.seg.undo()
 
     def do_edit_redo(self, widget):
         """Moves the opposite way of undo in autosave deque"""
         print("HANDLER: do_edit_redo")
-        with self.seg.buffer.handler_block(self.sig_buffer_changed):
+        with self.seg.buffer.handler_block(self.seg.sig_id):
             self.seg.redo()
 
     def do_edit_cut(self, widget):
@@ -364,4 +395,13 @@ class MainWindow(Gtk.Window):
     def do_about(self, widget):
         """Launches about dialog from MainWindow"""
         print("HANDLER: on_about")
-        self.dialog_about()
+        self.win.dialog_about()
+
+def main():
+    """Gets things rolling"""
+    print("Starting Word Agent")
+    app = Application()
+    Gtk.main()
+
+# CALLING MAIN FUNCTION HERE
+main()

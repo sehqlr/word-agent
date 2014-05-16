@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
-import WordAgent as WA
-from gi.repository import Gtk
+#! /usr/bin/env python3
 
-win = WA.MainWindow()
-win.show_all()
-Gtk.main()
+import WordAgent as WA
+
+app = WA.Application()
+
+app.main()
