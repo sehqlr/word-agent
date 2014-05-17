@@ -412,5 +412,5 @@ def main():
     app = Application()
     Gtk.main()
 
-# CALLING MAIN HERE
-main()
+if __name__ == '__main__':
+    main()
