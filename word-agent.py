@@ -28,15 +28,17 @@ Future Features:
 def read_from_file(filename):
     """Opens, reads, and returns the text contents of filename"""
     content = ""
-    with open(filename, "r") as textfile:
-        for line in textfile:
-            content += line
+    if filename:
+        with open(filename, "r") as textfile:
+            for line in textfile:
+                content += line
     return content
 
 def write_to_file(filename, content):
     """Writes content to filename on disk"""
-    with open(filename, "w") as f:
-        f.write(content)
+    if filename:
+        with open(filename, "w") as f:
+            f.write(content)
 
 # CLASS DEFINITIONS
 
