@@ -12,11 +12,12 @@ for proprietary use, please contact me.
 
 ### Instructions
 
-To use the program, run `python3 word-agent.py` on the commandline. The
-console should have debugging output like "Text autosaved."
+To use the program, run `python3 word_agent.py` or `./word_agent.py`
+on the commandline. The console should have debugging output, such as
+"Text autosaved."
 
 It is based on Python 3.x and the Python GI API, so please have these
-packages installed. So far, this is Linux only, including the CS50
+packages installed. I have tested this on Linux only, including the CS50
 Appliance. I claim no Windows, OSX, or BSD support. (However, a
 good friend has told me it will run from Windows.)
 

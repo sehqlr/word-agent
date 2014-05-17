@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 from collections import deque
 from difflib import SequenceMatcher
 from gi.repository import Gtk, Gdk
@@ -7,13 +9,13 @@ import io
 welcome_message = """
 Welcome to the Word Agent, the novel project management app!
 
-We are in v0.2, which means that current features and bugfixes will be
-worked on, not new features. New features to come in v0.3.
+We are in v0.2. I'm focusing on current improvements, not new features.
 
 If you have any questions, concerns, or comments, please create an
-issue on our GitHub page or email me with the details.
+issue on our GitHub page or email me with the details. You can find the
+GitHub link in the About page.
 
-New features coming in v0.3:
+New features planned for v0.3:
     Project management
     Document rendering (to ODF at first, more formats coming later)
 
@@ -103,7 +105,7 @@ class Segment:
 
     @property
     def base_edit(self):
-        self._edits[0]
+        return self._edits[0]
 
     @property
     def matcher(self):
@@ -135,21 +137,20 @@ class Segment:
         # TODO: Change this so things don't get duplicated
         if self.base_edit is None:
             self.edits.append(self.curr_text)
-            self.edits.rotate(1)
-        if self.prev_edit is not None:
-            self.edits.rotate(1)
-            if self.prev_edit is not None:
-                self.curr_text = self.prev_edit
-        elif self.prev_edit is None:
+
+        self.edits.rotate(1)
+
+        if self.prev_edit:
+            self.curr_text = self.prev_edit
+        else:
             print("Nothing to undo")
 
     def redo(self):
         """Reverts TextBuffer to later state, if it still exists"""
-        if self.prev_edit is not None:
+        if self.base_edit:
             self.edits.rotate(-1)
-            if self.prev_edit is not None:
-                self.curr_text = self.prev_edit
-        elif self.base_edit is None:
+            self.curr_text = self.prev_edit
+        else:
             print("Nothing to redo")
 
     # CUT/COPY/PASTE BUTTON METHODS
@@ -369,7 +370,7 @@ class Application:
         """Ensures file/save-as prompt for do_file_save"""
         print("HANDLER: do_file_saveas")
         self.file_is_saved_as = False
-        self.do_file_save()
+        self.do_file_save(widget)
 
     # EDIT handlers
 
@@ -411,5 +412,5 @@ def main():
     app = Application()
     Gtk.main()
 
-# CALLING MAIN FUNCTION HERE
+# CALLING MAIN HERE
 main()
