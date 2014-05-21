@@ -9,7 +9,7 @@ import io
 welcome_message = """
 Welcome to the Word Agent, the novel project management app!
 
-We are in v0.2. I'm focusing on current improvements, not new features.
+We are in v0.2.1. I'm focusing on current improvements, not new features.
 
 If you have any questions, concerns, or comments, please create an
 issue on our GitHub page or email me with the details. You can find the
@@ -74,7 +74,11 @@ class Segment:
         new = Segment(filename, content)
         return new
 
-    # coding 'private' members via properties, listed alphabetically
+    # properties, listed alphabetically
+    @property
+    def base_edit(self):
+        return self._edits[0]
+
     @property
     def buffer(self):
         return self._buffer
@@ -104,10 +108,6 @@ class Segment:
         self._filename = value
 
     @property
-    def base_edit(self):
-        return self._edits[0]
-
-    @property
     def matcher(self):
         return self._matcher
 
@@ -134,24 +134,25 @@ class Segment:
     # UNDO/REDO BUTTON METHODS
     def undo(self):
         """Reverts TextBuffer to earlier state, from the edits deque"""
-        # TODO: Change this so things don't get duplicated
-        if self.base_edit is None:
-            self.edits.append(self.curr_text)
+        with self.buffer.handler_block(self.sig_id):
+            if self.base_edit is None:
+                self.edits.append(self.curr_text)
 
-        self.edits.rotate(1)
+            self.edits.rotate(1)
 
-        if self.prev_edit:
-            self.curr_text = self.prev_edit
-        else:
-            print("Nothing to undo")
+            if self.prev_edit:
+                self.curr_text = self.prev_edit
+            else:
+                print("Nothing to undo")
 
     def redo(self):
         """Reverts TextBuffer to later state, if it still exists"""
-        if self.base_edit:
-            self.edits.rotate(-1)
-            self.curr_text = self.prev_edit
-        else:
-            print("Nothing to redo")
+        with self.buffer.handler_block(self.sig_id):
+            if self.base_edit:
+                self.edits.rotate(-1)
+                self.curr_text = self.prev_edit
+            else:
+                print("Nothing to redo")
 
     # CUT/COPY/PASTE BUTTON METHODS
     def cut(self):
@@ -177,7 +178,7 @@ class EditorWindow(Gtk.Window):
         self.connect("destroy", Gtk.main_quit)
         self.set_default_size(600, 600)
 
-        # create the Box container and add toolbar and scrolled window
+        # create the Box container 
         self.box = Gtk.Box.new(1 , 3)
         self.add(self.box)
 
@@ -185,9 +186,11 @@ class EditorWindow(Gtk.Window):
         self.buttons = {}
         self.create_toolbar()
 
+        # Scrolled window to contain TextView
         self.scroll = Gtk.ScrolledWindow.new(None, None)
         self.box.pack_start(self.scroll, True, True, 0)
 
+        # TextView's wrap mode won't split words
         self.view = Gtk.TextView.new()
         self.view.set_wrap_mode(2)
         self.scroll.add(self.view)
@@ -377,14 +380,12 @@ class Application:
     def do_edit_undo(self, widget):
         """Blocks custom signal for buffer to traverse autosave deque"""
         print("HANDLER: do_edit_undo")
-        with self.seg.buffer.handler_block(self.seg.sig_id):
-            self.seg.undo()
+        self.seg.undo()
 
     def do_edit_redo(self, widget):
         """Moves the opposite way of undo in autosave deque"""
         print("HANDLER: do_edit_redo")
-        with self.seg.buffer.handler_block(self.seg.sig_id):
-            self.seg.redo()
+        self.seg.redo()
 
     def do_edit_cut(self, widget):
         """Implements basic edit/cut"""
@@ -414,3 +415,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+else:
+    print("Word Agent, by Sam Hatfield. Enjoy!")
