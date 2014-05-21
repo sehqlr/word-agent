@@ -9,7 +9,7 @@ import io
 welcome_message = """
 Welcome to the Word Agent, the novel project management app!
 
-We are in v0.2. I'm focusing on current improvements, not new features.
+We are in v0.2.1. I'm focusing on current improvements, not new features.
 
 If you have any questions, concerns, or comments, please create an
 issue on our GitHub page or email me with the details. You can find the
@@ -71,10 +71,15 @@ class Segment:
 
     @staticmethod
     def new(filename="untitled", content=welcome_message):
+        """This includes default values for the Segment constructor"""
         new = Segment(filename, content)
         return new
 
     # coding 'private' members via properties, listed alphabetically
+    @property
+    def base_edit(self):
+        return self._edits[0]
+
     @property
     def buffer(self):
         return self._buffer
@@ -104,10 +109,6 @@ class Segment:
         self._filename = value
 
     @property
-    def base_edit(self):
-        return self._edits[0]
-
-    @property
     def matcher(self):
         return self._matcher
 
@@ -134,7 +135,7 @@ class Segment:
     # UNDO/REDO BUTTON METHODS
     def undo(self):
         """Reverts TextBuffer to earlier state, from the edits deque"""
-        # TODO: Change this so things don't get duplicated
+        # TODO: Block the sig_id here
         if self.base_edit is None:
             self.edits.append(self.curr_text)
 
@@ -147,6 +148,7 @@ class Segment:
 
     def redo(self):
         """Reverts TextBuffer to later state, if it still exists"""
+        # TODO: Block the sig_id here
         if self.base_edit:
             self.edits.rotate(-1)
             self.curr_text = self.prev_edit
@@ -172,19 +174,22 @@ class Segment:
 class EditorWindow(Gtk.Window):
     """View for word-agent. Hardcodes UI definitions"""
     def __init__(self):
+
         # basic init stuff for window
         Gtk.Window.__init__(self, title="Word Agent")
         self.connect("destroy", Gtk.main_quit)
         self.set_default_size(600, 600)
 
-        # create the Box container and add toolbar and scrolled window
+        # create the Box container
         self.box = Gtk.Box.new(1 , 3)
         self.add(self.box)
 
         # button_dict keeps a list of button objects, and their handlers
         self.buttons = {}
+
         self.create_toolbar()
 
+        # Scrolled window and TextView together make the 
         self.scroll = Gtk.ScrolledWindow.new(None, None)
         self.box.pack_start(self.scroll, True, True, 0)
 
@@ -195,7 +200,6 @@ class EditorWindow(Gtk.Window):
     # TODO: create properties to access objects in EditorWindow
 
     # DIALOG METHODS
-    # TODO: Add file type filters to FileChooser dialogs
     def dialog_about(self):
         """Launch an About dialog window"""
         dialog = Gtk.AboutDialog.new()
@@ -210,6 +214,7 @@ class EditorWindow(Gtk.Window):
             print("About closed")
             dialog.destroy()
 
+    # TODO: Add file type filters to FileChoose dialogs
     def dialog_file_open(self):
         """Launch a File/Open dialog window"""
         dialog = Gtk.FileChooserDialog("Open a project", None,
@@ -244,7 +249,7 @@ class EditorWindow(Gtk.Window):
     # IDEA: Loading glade files and CSS?
 
     def create_toolbar(self):
-        """Loads toolbar with 10 stock buttons, adds them to dict"""
+        """Loads toolbar with 10 stock buttons, adds to buttons dictionary"""
         self.toolbar = Gtk.Toolbar.new()
         self.box.pack_start(self.toolbar, False, False, 0)
         buttons = self.buttons
@@ -327,11 +332,13 @@ class Application:
         self.win.show_all()
 
     def connections(self):
+    """Uses buttons and handlers dictionaries to connect widget signals"""
         for name, widget in self.win.buttons.items():
             if name in self.handlers:
                 widget.connect("clicked", self.handlers[name])
 
     def change_buffer(self, filename=None):
+    """Creates a new buffer, with defaults or content from disk"""
         text = read_from_file(filename)
         if text is "":
             self.seg = Segment.new()
@@ -340,6 +347,7 @@ class Application:
             self.seg = Segment.new(filename=filename, content=text)
             self.win.view.set_buffer(self.seg.buffer)
 
+    # TODO: Add error checking in all functions, and better debug messages
     # FILE handlers
 
     def do_file_new(self, widget):
@@ -414,3 +422,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+else:
+    print("REMEMBER: Use None in Application methods if calling them directly.")
