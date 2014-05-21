@@ -189,7 +189,7 @@ class EditorWindow(Gtk.Window):
 
         self.create_toolbar()
 
-        # Scrolled window and TextView together make the 
+        # Scrolled window and TextView together make the
         self.scroll = Gtk.ScrolledWindow.new(None, None)
         self.box.pack_start(self.scroll, True, True, 0)
 
@@ -332,13 +332,13 @@ class Application:
         self.win.show_all()
 
     def connections(self):
-    """Uses buttons and handlers dictionaries to connect widget signals"""
+        """Uses buttons and handlers dicts to connect widget signals"""
         for name, widget in self.win.buttons.items():
             if name in self.handlers:
                 widget.connect("clicked", self.handlers[name])
 
     def change_buffer(self, filename=None):
-    """Creates a new buffer, with defaults or content from disk"""
+        """Creates a new buffer, with defaults or content from disk"""
         text = read_from_file(filename)
         if text is "":
             self.seg = Segment.new()
