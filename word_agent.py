@@ -9,20 +9,8 @@ import io
 welcome_message = """
 Welcome to the Word Agent, the novel project management app!
 
-We are in v0.2.1. I'm focusing on current improvements, not new features.
-
 If you have any questions, concerns, or comments, please create an
-issue on our GitHub page or email me with the details. You can find the
-GitHub link in the About page.
-
-New features planned for v0.3:
-    Project management
-    Document rendering (to ODF at first, more formats coming later)
-
-Future Features:
-    Version Control System integration
-    Cloud Collaboration with WebRTC
-    "Post Production" formatting (e.i. Markdown)
+issue on our GitHub page or email me with the details.
 """
 
 # UTILITY FUNCTIONS
@@ -46,7 +34,6 @@ def write_to_file(filename, content):
 
 class Segment:
     """Model for Word Agent. Encapsulates a segment"""
-
     def __init__(self, filename, content):
 
         # creates TextBuffer and Clipboard
@@ -131,7 +118,7 @@ class Segment:
         while self.base_edit is not None:
             self.edits.popleft()
 
-    # UNDO/REDO BUTTON METHODS
+    # UNDO/REDO METHODS
     def undo(self):
         """Reverts TextBuffer to earlier state, from the edits deque"""
         with self.buffer.handler_block(self.sig_id):
@@ -179,16 +166,21 @@ class EditorWindow(Gtk.Window):
         self.set_default_size(600, 600)
 
         # create the Box container 
-        self.box = Gtk.Box.new(1 , 3)
+        self.box = Gtk.Box.new(1 , 4)
         self.add(self.box)
 
         # button_dict keeps a list of button objects, and their handlers
         self.buttons = {}
         self.create_toolbar()
 
-        # Scrolled window to contain TextView
+        # scrolled window to contain TextView
         self.scroll = Gtk.ScrolledWindow.new(None, None)
         self.box.pack_start(self.scroll, True, True, 0)
+
+        # adding the View/Toggle_Toolbar
+        button_typewriter = Gtk.Button.new_with_label("Show/Hide Tools")
+        self.box.pack_start(button_typewriter, False,  False, 0)
+        self.buttons["button_typewriter"] = button_typewriter
 
         # TextView's wrap mode won't split words
         self.view = Gtk.TextView.new()
@@ -198,13 +190,12 @@ class EditorWindow(Gtk.Window):
     # TODO: create properties to access objects in EditorWindow
 
     # DIALOG METHODS
-    # TODO: Add file type filters to FileChooser dialogs
     def dialog_about(self):
         """Launch an About dialog window"""
         dialog = Gtk.AboutDialog.new()
         dialog.set_program_name("Word Agent")
         dialog.set_authors(["Sam Hatfield", None])
-        dialog.set_version("0.2")
+        dialog.set_version("0.2.2")
         dialog.set_website("https://github.com/sehqlr/word-agent")
         dialog.set_website_label("Fork us on GitHub!")
         dialog.set_comments("A simple text editor with a big future.")
@@ -219,6 +210,23 @@ class EditorWindow(Gtk.Window):
             Gtk.FileChooserAction.OPEN,
             (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
              Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+
+        # plaintext filter
+        filter_text = Gtk.FileFilter.new()
+        filter_text.set_name("Text files")
+        filter_text.add_mime_type("text/plain")
+
+        # all files filter
+        filter_all = Gtk.FileFilter.new()
+        filter_all.set_name("All")
+        filter_all.add_pattern("*")
+
+        # add filter, set overwrite alert to yes
+        dialog.add_filter(filter_text)
+        dialog.add_filter(filter_all)
+        dialog.set_do_overwrite_confirmation(True)        
+
+        # get the response, return filename or None
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             filename = dialog.get_filename()
@@ -234,6 +242,23 @@ class EditorWindow(Gtk.Window):
             Gtk.FileChooserAction.SAVE,
             (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
              Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
+
+        # plaintext filter
+        filter_text = Gtk.FileFilter.new()
+        filter_text.set_name("Text files")
+        filter_text.add_mime_type("text/plain")
+
+        # all files filter
+        filter_all = Gtk.FileFilter.new()
+        filter_all.set_name("All")
+        filter_all.add_pattern("*")
+
+        # add filter, set overwrite alert to yes
+        dialog.add_filter(filter_text)
+        dialog.add_filter(filter_all)
+        dialog.set_do_overwrite_confirmation(True)        
+
+        # get the response, return filename or None
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             filename = dialog.get_filename()
@@ -313,6 +338,7 @@ class Application:
         # boolean for File/Save(as) functions
         self.file_is_saved_as = False
 
+        # button keywords match from EditorWindow.buttons
         self.handlers = {
             "button_new": self.do_file_new,
             "button_open": self.do_file_open,
@@ -323,7 +349,8 @@ class Application:
             "button_cut": self.do_edit_cut,
             "button_copy": self.do_edit_copy,
             "button_paste": self.do_edit_paste,
-            "button_about": self.do_about
+            "button_about": self.do_about,
+            "button_typewriter": self.do_view_toggle_toolbar
             }
 
         self.connections()
@@ -344,7 +371,6 @@ class Application:
             self.win.view.set_buffer(self.seg.buffer)
 
     # FILE handlers
-
     def do_file_new(self, widget):
         """Create a new Segment, with default filename and content"""
         print("HANDLER: do_file_new")
@@ -376,7 +402,6 @@ class Application:
         self.do_file_save(widget)
 
     # EDIT handlers
-
     def do_edit_undo(self, widget):
         """Blocks custom signal for buffer to traverse autosave deque"""
         print("HANDLER: do_edit_undo")
@@ -402,6 +427,15 @@ class Application:
         print("HANDLER: do_edit_paste")
         self.seg.paste()
 
+    # VIEW handlers
+    def do_view_toggle_toolbar(self, widget):
+        """Toggles whether the toolbar is visible"""
+        if self.win.toolbar.get_visible():
+            self.win.toolbar.set_visible(False)
+        else:
+            self.win.toolbar.set_visible(True)
+
+    # ABOUT handlers
     def do_about(self, widget):
         """Launches about dialog from MainWindow"""
         print("HANDLER: on_about")
