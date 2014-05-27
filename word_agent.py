@@ -15,6 +15,16 @@ issue on our GitHub page or email me with the details.
 
 # UTILITY FUNCTIONS
 
+def capture_keystrokes(widget, event=None):
+    key = Gdk.keyval_name(event.keyval)
+    mod = event.state
+    
+    if mod is Gdk.ModifierType.CONTROL_MASK:
+        if key is 'n':
+            return "file_new"
+        elif key is 'o':
+            return "file_open"
+
 def read_from_file(filename):
     """Opens, reads, and returns the text contents of filename"""
     content = ""
@@ -177,10 +187,10 @@ class EditorWindow(Gtk.Window):
         self.scroll = Gtk.ScrolledWindow.new(None, None)
         self.box.pack_start(self.scroll, True, True, 0)
 
-        # adding the View/Toggle_Toolbar
+        # adding the View/Toggle_Toolbar ("typewriter")
         button_typewriter = Gtk.Button.new_with_label("Show/Hide Tools")
         self.box.pack_start(button_typewriter, False,  False, 0)
-        self.buttons["button_typewriter"] = button_typewriter
+        self.buttons["view_typewriter"] = button_typewriter
 
         # TextView's wrap mode won't split words
         self.view = Gtk.TextView.new()
@@ -280,52 +290,52 @@ class EditorWindow(Gtk.Window):
         # NEW button
         button_new = Gtk.ToolButton.new_from_stock(Gtk.STOCK_NEW)
         self.toolbar.insert(button_new, 0)
-        self.buttons["button_new"] = button_new
+        self.buttons["file_new"] = button_new
 
         # OPEN button
         button_open = Gtk.ToolButton.new_from_stock(Gtk.STOCK_OPEN)
         self.toolbar.insert(button_open, 1)
-        buttons["button_open"] = button_open
+        buttons["file_open"] = button_open
 
         # SAVE button
         button_save = Gtk.ToolButton.new_from_stock(Gtk.STOCK_SAVE)
         self.toolbar.insert(button_save, 2)
-        buttons["button_save"] = button_save
+        buttons["file_save"] = button_save
 
         # SAVE AS button
         button_saveas = Gtk.ToolButton.new_from_stock(Gtk.STOCK_SAVE_AS)
         self.toolbar.insert(button_saveas, 3)
-        buttons["button_saveas"] = button_saveas
+        buttons["file_saveas"] = button_saveas
 
         # UNDO button
         button_undo = Gtk.ToolButton.new_from_stock(Gtk.STOCK_UNDO)
         self.toolbar.insert(button_undo, 4)
-        buttons["button_undo"] = button_undo
+        buttons["edit_undo"] = button_undo
 
         # REDO button
         button_redo = Gtk.ToolButton.new_from_stock(Gtk.STOCK_REDO)
         self.toolbar.insert(button_redo, 5)
-        buttons["button_redo"] = button_redo
+        buttons["edit_redo"] = button_redo
 
         # CUT button
         button_cut = Gtk.ToolButton.new_from_stock(Gtk.STOCK_CUT)
         self.toolbar.insert(button_cut, 6)
-        buttons["button_cut"] = button_cut
+        buttons["edit_cut"] = button_cut
 
         # COPY button
         button_copy = Gtk.ToolButton.new_from_stock(Gtk.STOCK_COPY)
         self.toolbar.insert(button_copy, 7)
-        buttons["button_copy"] = button_copy
+        buttons["edit_copy"] = button_copy
 
         # PASTE button
         button_paste = Gtk.ToolButton.new_from_stock(Gtk.STOCK_PASTE)
         self.toolbar.insert(button_paste, 8)
-        buttons["button_paste"] = button_paste
+        buttons["edit_paste"] = button_paste
 
         # ABOUT button
         button_about = Gtk.ToolButton.new_from_stock(Gtk.STOCK_ABOUT)
         self.toolbar.insert(button_about, 9)
-        buttons["button_about"] = button_about
+        buttons["about"] = button_about
 
 
 class Application:
@@ -340,21 +350,23 @@ class Application:
 
         # button keywords match from EditorWindow.buttons
         self.handlers = {
-            "button_new": self.do_file_new,
-            "button_open": self.do_file_open,
-            "button_save": self.do_file_save,
-            "button_saveas": self.do_file_saveas,
-            "button_undo": self.do_edit_undo,
-            "button_redo": self.do_edit_redo,
-            "button_cut": self.do_edit_cut,
-            "button_copy": self.do_edit_copy,
-            "button_paste": self.do_edit_paste,
-            "button_about": self.do_about,
-            "button_typewriter": self.do_view_toggle_toolbar
+            "file_new": self.do_file_new,
+            "file_open": self.do_file_open,
+            "file_save": self.do_file_save,
+            "file_saveas": self.do_file_saveas,
+            "edit_undo": self.do_edit_undo,
+            "edit_redo": self.do_edit_redo,
+            "edit_cut": self.do_edit_cut,
+            "edit_copy": self.do_edit_copy,
+            "edit_paste": self.do_edit_paste,
+            "about": self.do_about,
+            "view_typewriter": self.do_view_toggle_toolbar
             }
 
         self.connections()
         self.win.show_all()
+
+        self.win.connect("key-press-event", self.execute_operation)
 
     def connections(self):
         for name, widget in self.win.buttons.items():
@@ -369,6 +381,13 @@ class Application:
         else:
             self.seg = Segment.new(filename=filename, content=text)
             self.win.view.set_buffer(self.seg.buffer)
+
+    def execute_operation(self, widget, event):
+        operation = capture_keystrokes(widget, event)
+        print("OPERATION: ", operation)
+        if operation in self.handlers:
+            f = self.handlers[operation]
+            f(widget)
 
     # FILE handlers
     def do_file_new(self, widget):
