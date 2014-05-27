@@ -15,15 +15,6 @@ issue on our GitHub page or email me with the details.
 
 # UTILITY FUNCTIONS
 
-def capture_keystrokes(widget, event=None):
-    key = Gdk.keyval_name(event.keyval)
-    mod = event.state
-    
-    if mod is Gdk.ModifierType.CONTROL_MASK:
-        if key is 'n':
-            return "file_new"
-        elif key is 'o':
-            return "file_open"
 
 def read_from_file(filename):
     """Opens, reads, and returns the text contents of filename"""
@@ -383,11 +374,23 @@ class Application:
             self.win.view.set_buffer(self.seg.buffer)
 
     def execute_operation(self, widget, event):
-        operation = capture_keystrokes(widget, event)
-        print("OPERATION: ", operation)
-        if operation in self.handlers:
-            f = self.handlers[operation]
-            f(widget)
+        keystroke = Gtk.accelerator_get_label(event.keyval, event.state)
+        if "Ctrl" in keystroke:
+            if "N" in keystroke:
+                self.handlers["file_new"](None)
+            elif "O" in keystroke:
+                self.handlers["file_open"](None)
+            elif "S" in keystroke:
+                if "Shift" in keystroke:
+                    self.handlers["file_saveas"](None)
+                else:
+                    self.handlers["file_save"](None)
+            elif "Z" in keystroke:
+                self.handlers["edit_undo"](None)
+            elif "Y" in keystroke:
+                self.handlers["edit_redo"](None)
+        elif "F1" in keystroke:
+            self.handlers["about"](None)
 
     # FILE handlers
     def do_file_new(self, widget):
