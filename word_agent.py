@@ -9,6 +9,10 @@ import io
 welcome_message = """
 Welcome to the Word Agent, the novel project management app!
 
+Keyboard shortcuts are standard: 
+Ctrl + N for New File, Ctrl + Shift + S for Save as.
+Redo is Ctrl + Y. The About can be called with F1.
+
 If you have any questions, concerns, or comments, please create an
 issue on our GitHub page or email me with the details.
 """
@@ -167,7 +171,7 @@ class EditorWindow(Gtk.Window):
         self.set_default_size(600, 600)
 
         # create the Box container 
-        self.box = Gtk.Box.new(1 , 4)
+        self.box = Gtk.Box.new(1 , 3)
         self.add(self.box)
 
         # button_dict keeps a list of button objects, and their handlers
@@ -177,11 +181,6 @@ class EditorWindow(Gtk.Window):
         # scrolled window to contain TextView
         self.scroll = Gtk.ScrolledWindow.new(None, None)
         self.box.pack_start(self.scroll, True, True, 0)
-
-        # adding the View/Toggle_Toolbar ("typewriter")
-        button_typewriter = Gtk.Button.new_with_label("Show/Hide Tools")
-        self.box.pack_start(button_typewriter, False,  False, 0)
-        self.buttons["view_typewriter"] = button_typewriter
 
         # TextView's wrap mode won't split words
         self.view = Gtk.TextView.new()
@@ -193,6 +192,8 @@ class EditorWindow(Gtk.Window):
     # DIALOG METHODS
     def dialog_about(self):
         """Launch an About dialog window"""
+
+        # build an about dialog
         dialog = Gtk.AboutDialog.new()
         dialog.set_program_name("Word Agent")
         dialog.set_authors(["Sam Hatfield", None])
@@ -200,6 +201,9 @@ class EditorWindow(Gtk.Window):
         dialog.set_website("https://github.com/sehqlr/word-agent")
         dialog.set_website_label("Fork us on GitHub!")
         dialog.set_comments("A simple text editor with a big future.")
+        dialog.set_copyright("Copyright 2014 and onward by Sam Hatfield")
+
+        # wait until user closes dialog
         response = dialog.run()
         if response:
             print("About closed")
@@ -268,6 +272,32 @@ class EditorWindow(Gtk.Window):
         if response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
             return None
+
+    def dialog_help(self):
+        """Launch a help message"""
+        shortcuts = """
+FILE/EDIT SHORTCUTS:
+Control + N = New File
+Control + O = Open File
+Control + S = Save File
+Control + Shift + S = Save File As
+Control + Z = Undo Edit
+Control + Y = Redo Edit
+Control + X = Cut Selection
+Control + C = Copy Selection
+Control + V = Paste Clipboard
+
+VIEW SHORTCUTS
+F1 = Help
+F2 = About
+F3 = Toggle Toolbar
+"""
+        # generate help message dialog    
+        dialog = Gtk.MessageDialog(message_format="Keyboard Shortcuts")
+        dialog.set_property("message_type", Gtk.MessageType.INFO)
+        dialog.format_secondary_text(shortcuts)
+
+        dialog.run()
 
     # UI DEFINITION METHODS
     # IDEA: Loading glade files and CSS?
@@ -350,7 +380,8 @@ class Application:
             "edit_cut": self.do_edit_cut,
             "edit_copy": self.do_edit_copy,
             "edit_paste": self.do_edit_paste,
-            "about": self.do_about,
+            "view_about": self.do_view_about,
+            "view_help": self.do_view_help,
             "view_typewriter": self.do_view_toggle_toolbar
             }
 
@@ -390,7 +421,11 @@ class Application:
             elif "Y" in keystroke:
                 self.handlers["edit_redo"](None)
         elif "F1" in keystroke:
-            self.handlers["about"](None)
+            self.handlers["view_help"](None)
+        elif "F2" in keystroke:
+            self.handlers["view_about"](None)
+        elif "F3" in keystroke:
+            self.handlers["view_typewriter"](None)
 
     # FILE handlers
     def do_file_new(self, widget):
@@ -457,11 +492,14 @@ class Application:
         else:
             self.win.toolbar.set_visible(True)
 
-    # ABOUT handlers
-    def do_about(self, widget):
+    def do_view_about(self, widget):
         """Launches about dialog from MainWindow"""
         print("HANDLER: on_about")
         self.win.dialog_about()
+
+    def do_view_help(self, widget):
+        """Launches help dialog from MainWindow"""
+        self.win.dialog_help()
 
 def main():
     """Gets things rolling"""
