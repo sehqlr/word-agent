@@ -9,9 +9,7 @@ import io
 welcome_message = """
 Welcome to the Word Agent, the novel project management app!
 
-Keyboard shortcuts are standard: 
-Ctrl + N for New File, Ctrl + Shift + S for Save as.
-Redo is Ctrl + Y. The About can be called with F1.
+Keyboard shortcuts are listed in the Help message (Press F1).
 
 If you have any questions, concerns, or comments, please create an
 issue on our GitHub page or email me with the details.
@@ -296,8 +294,12 @@ F3 = Toggle Toolbar
         dialog = Gtk.MessageDialog(message_format="Keyboard Shortcuts")
         dialog.set_property("message_type", Gtk.MessageType.INFO)
         dialog.format_secondary_text(shortcuts)
+        dialog.add_button(Gtk.STOCK_OK, Gtk.ResponseType.OK)
 
-        dialog.run()
+        response = dialog.run()
+        if response:
+            print("Help closed")
+            dialog.destroy()
 
     # UI DEFINITION METHODS
     # IDEA: Loading glade files and CSS?
