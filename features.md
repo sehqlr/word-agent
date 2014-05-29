@@ -11,8 +11,12 @@ but it can be changed depending upon Word Agent's userbase, if anyone.
 * New/Open/Save(As)
 * Undo/Redo
 * About Dialog
+* Help Dialog
+* Keyboard shortcuts
+* Toolbar with basic features, with the option of 
+hiding it with F3. This is called "Typewriter mode"
 
-There are currently no keyboard shortcuts, nor is there any formatting.
+There are currently is no formatting tools. See below.
 
 ### Future Features, introduced in odd-numbered releases
 
@@ -22,15 +26,14 @@ There are currently no keyboard shortcuts, nor is there any formatting.
 
 Your large text file is kept in smaller "segments" with an internal
 database to keep track of where they belong in the scheme of the larger
-document. These files will not contain implicit formatting or metadata
+document. These files will not contain implicit formatting or metadata.
 
 * Project rendering and formatting
 
 Word Agent will "render" the larger document by concatenating
 the segments together when the full project is needed. Additionally,
 the document will be formatted at this stage, with either an internal
-module using Markdown or other lightweight markup, or external tools
-at the user's option.
+module or external tools (like Markdown) at the user's option.
 
 * Export to eReader formats
 
@@ -45,26 +48,20 @@ idea is to support photographs and images to the character's entry.
 
 * Novel support, others later
 
-Up until Version 1.1, this program will have novels as the target
+Before v1.1, this program will have novels as the target
 project type. Support for academic papers, stage/screenplays, and other
-long works will be supported starting in version 1.1.
+long works will be supported later.
 
 ##### Version Control System (starting v0.5)
 
 This feature will take ideas from programs like Git and Mercurial
 for version control of the project. Integration with external tools
-will begin in v1.3.
-
-My original plan was to include Mercurial as a part of the script, but
-it looks like that Mercurial is based on Python 2.x. 
-
-With that in mind, I will design a simple VCS module for internal use.
+will begin in v1.3. I will design a simple VCS module for internal use.
 It will probably use difflib quite a lot.
 
 ##### Cloud Collaboration (starting v0.7)
 
-This feature will use WebRTC technology, and possibly Node.js or some
-similar technology if needed, that connects instances of the program, so
+This feature will connect instances of the program, so
 users can work on projects concurrently. This is where the VCS feature
 will come in handy, as the deltas can be traded in a data channel.
 
