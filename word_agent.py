@@ -125,11 +125,14 @@ class Segment:
     def undo(self):
         """Reverts TextBuffer to earlier state, from the edits deque"""
         with self.buffer.handler_block(self.sig_id):
+            # because autosave is not the most current edit
             if self.base_edit is None:
                 self.edits.append(self.curr_text)
 
+            # rotate the most recent addition to the back of the deque
             self.edits.rotate(1)
 
+            # if prev_edit is None, we've rotated all the way around
             if self.prev_edit:
                 self.curr_text = self.prev_edit
             else:
@@ -138,6 +141,7 @@ class Segment:
     def redo(self):
         """Reverts TextBuffer to later state, if it still exists"""
         with self.buffer.handler_block(self.sig_id):
+            # if base_edit is None, we've rotated all the way back
             if self.base_edit:
                 self.edits.rotate(-1)
                 self.curr_text = self.prev_edit
@@ -188,8 +192,6 @@ class EditorWindow(Gtk.Window):
         self.view.set_wrap_mode(2)
         self.scroll.add(self.view)
 
-    # TODO: create properties to access objects in EditorWindow
-
     # DIALOG METHODS
     def dialog_about(self):
         """Launch an About dialog window"""
@@ -198,7 +200,7 @@ class EditorWindow(Gtk.Window):
         dialog = Gtk.AboutDialog.new()
         dialog.set_program_name("Word Agent")
         dialog.set_authors(["Sam Hatfield", None])
-        dialog.set_version("0.2.2")
+        dialog.set_version("0.2.3-dev")
         dialog.set_website("https://github.com/sehqlr/word-agent")
         dialog.set_website_label("Fork us on GitHub!")
         dialog.set_comments("A simple text editor with a big future.")
@@ -207,7 +209,6 @@ class EditorWindow(Gtk.Window):
         # wait until user closes dialog
         response = dialog.run()
         if response:
-            print("About closed")
             dialog.destroy()
 
     def dialog_file_open(self):
@@ -303,7 +304,6 @@ F11 = Toggle Fullscreen
 
         response = dialog.run()
         if response:
-            print("Help closed")
             dialog.destroy()
 
     # UI DEFINITION METHODS
@@ -318,7 +318,7 @@ F11 = Toggle Fullscreen
         # NEW button
         button_new = Gtk.ToolButton.new_from_stock(Gtk.STOCK_NEW)
         self.toolbar.insert(button_new, 0)
-        self.buttons["file_new"] = button_new
+        buttons["file_new"] = button_new
 
         # OPEN button
         button_open = Gtk.ToolButton.new_from_stock(Gtk.STOCK_OPEN)
@@ -331,9 +331,9 @@ F11 = Toggle Fullscreen
         buttons["file_save"] = button_save
 
         # SAVE AS button
-        button_saveas = Gtk.ToolButton.new_from_stock(Gtk.STOCK_SAVE_AS)
-        self.toolbar.insert(button_saveas, 3)
-        buttons["file_saveas"] = button_saveas
+        button_save_as = Gtk.ToolButton.new_from_stock(Gtk.STOCK_SAVE_AS)
+        self.toolbar.insert(button_save_as, 3)
+        buttons["file_save_as"] = button_save_as
 
         # UNDO button
         button_undo = Gtk.ToolButton.new_from_stock(Gtk.STOCK_UNDO)
@@ -381,7 +381,7 @@ class Application:
             "file_new": self.do_file_new,
             "file_open": self.do_file_open,
             "file_save": self.do_file_save,
-            "file_saveas": self.do_file_saveas,
+            "file_save_as": self.do_file_save_as,
             "edit_undo": self.do_edit_undo,
             "edit_redo": self.do_edit_redo,
             "edit_cut": self.do_edit_cut,
@@ -389,7 +389,7 @@ class Application:
             "edit_paste": self.do_edit_paste,
             "view_about": self.do_view_about,
             "view_help": self.do_view_help,
-            "view_typewriter": self.do_view_toggle_toolbar,
+            "view_typewriter": self.do_view_typewriter,
             "view_fullscreen": self.do_view_fullscreen,
             }
 
@@ -421,7 +421,7 @@ class Application:
                 self.handlers["file_open"](None)
             elif "S" in keystroke:
                 if "Shift" in keystroke:
-                    self.handlers["file_saveas"](None)
+                    self.handlers["file_save_as"](None)
                 else:
                     self.handlers["file_save"](None)
             elif "Z" in keystroke:
@@ -441,13 +441,11 @@ class Application:
     # FILE handlers
     def do_file_new(self, widget):
         """Create a new Segment, with default filename and content"""
-        print("HANDLER: do_file_new")
         self.change_buffer()
         self.file_is_saved_as = False
 
     def do_file_open(self, widget):
         """Loads text from a file and creates Segment with that text"""
-        print("HANDLER: do_file_open")
         filename = self.win.dialog_file_open()
         if filename:
             self.change_buffer(filename)
@@ -455,7 +453,6 @@ class Application:
 
     def do_file_save(self, widget):
         """Overwrites old file, prompts file/save-as if needed"""
-        print("HANDLER: do_file_save")
         if self.file_is_saved_as is False:
             self.seg.filename = self.win.dialog_file_save_as()
 
@@ -465,38 +462,32 @@ class Application:
 
     def do_file_saveas(self, widget):
         """Ensures file/save-as prompt for do_file_save"""
-        print("HANDLER: do_file_saveas")
         self.file_is_saved_as = False
         self.do_file_save(widget)
 
     # EDIT handlers
     def do_edit_undo(self, widget):
         """Blocks custom signal for buffer to traverse autosave deque"""
-        print("HANDLER: do_edit_undo")
         self.seg.undo()
 
     def do_edit_redo(self, widget):
         """Moves the opposite way of undo in autosave deque"""
-        print("HANDLER: do_edit_redo")
         self.seg.redo()
 
     def do_edit_cut(self, widget):
         """Implements basic edit/cut"""
-        print("HANDLER: do_edit_cut")
         self.seg.cut()
 
     def do_edit_copy(self, widget):
         """Implements basic edit/copy"""
-        print("HANDLER: do_edit_copy")
         self.seg.copy()
 
     def do_edit_paste(self, widget):
         """Implements basic edit/paste"""
-        print("HANDLER: do_edit_paste")
         self.seg.paste()
 
     # VIEW handlers
-    def do_view_toggle_toolbar(self, widget):
+    def do_view_typewriter(self, widget):
         """Toggles whether the toolbar is visible"""
         if self.win.toolbar.get_visible():
             self.win.toolbar.set_visible(False)
@@ -505,7 +496,6 @@ class Application:
 
     def do_view_about(self, widget):
         """Launches about dialog from MainWindow"""
-        print("HANDLER: on_about")
         self.win.dialog_about()
 
     def do_view_fullscreen(self, widget):
