@@ -176,6 +176,9 @@ class EditorWindow(Gtk.Window):
         self.buttons = {}
         self.create_toolbar()
 
+        # boolean to keep track of fullscreen
+        self.is_fullscreen = False
+
         # scrolled window to contain TextView
         self.scroll = Gtk.ScrolledWindow.new(None, None)
         self.box.pack_start(self.scroll, True, True, 0)
@@ -289,6 +292,8 @@ VIEW SHORTCUTS
 F1 = Help
 F2 = About
 F3 = Toggle Toolbar
+
+F11 = Toggle Fullscreen
 """
         # generate help message dialog    
         dialog = Gtk.MessageDialog(message_format="Keyboard Shortcuts")
@@ -358,7 +363,7 @@ F3 = Toggle Toolbar
         # ABOUT button
         button_about = Gtk.ToolButton.new_from_stock(Gtk.STOCK_ABOUT)
         self.toolbar.insert(button_about, 9)
-        buttons["about"] = button_about
+        buttons["view_about"] = button_about
 
 
 class Application:
@@ -384,7 +389,8 @@ class Application:
             "edit_paste": self.do_edit_paste,
             "view_about": self.do_view_about,
             "view_help": self.do_view_help,
-            "view_typewriter": self.do_view_toggle_toolbar
+            "view_typewriter": self.do_view_toggle_toolbar,
+            "view_fullscreen": self.do_view_fullscreen,
             }
 
         self.connections()
@@ -423,7 +429,10 @@ class Application:
             elif "Y" in keystroke:
                 self.handlers["edit_redo"](None)
         elif "F1" in keystroke:
-            self.handlers["view_help"](None)
+            if "F11" in keystroke:
+                self.handlers["view_fullscreen"](None)
+            else:
+                self.handlers["view_help"](None)
         elif "F2" in keystroke:
             self.handlers["view_about"](None)
         elif "F3" in keystroke:
@@ -498,6 +507,15 @@ class Application:
         """Launches about dialog from MainWindow"""
         print("HANDLER: on_about")
         self.win.dialog_about()
+
+    def do_view_fullscreen(self, widget):
+        """Toggles fullscreen mode"""
+        if self.win.is_fullscreen:
+            self.win.unfullscreen()
+            self.win.is_fullscreen = False
+        else:
+            self.win.fullscreen()
+            self.win.is_fullscreen = True
 
     def do_view_help(self, widget):
         """Launches help dialog from MainWindow"""
