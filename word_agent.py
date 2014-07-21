@@ -325,6 +325,9 @@ F2 = About
 F3 = Toggle Toolbar
 
 F11 = Toggle Fullscreen
+
+OTHER SHORTCUTS
+Control + Q = Quit Program
 """
         # generate help message dialog    
         dialog = Gtk.MessageDialog(message_format="Keyboard Shortcuts")
@@ -449,7 +452,9 @@ class Application:
     def execute_operation(self, widget, event):
         keystroke = Gtk.accelerator_get_label(event.keyval, event.state)
         if "Ctrl" in keystroke:
-            if "N" in keystroke:
+            if "Q" in keystroke:
+                Gtk.main_quit()
+            elif "N" in keystroke:
                 self.handlers["file_new"](None)
             elif "O" in keystroke:
                 self.handlers["file_open"](None)
