@@ -10,12 +10,13 @@ Then, the GTK front end module will have most of the same functionality,
 except with an import from here.
 
 I'm going to make sure that this module is complete before I remove
-functionality from the 'classic version'.
+functionality from the 'classic version'. Obviously, I won't push these
+changes to the master branch until it is stable. Then I think I can call
+it v0.3.
 """
 
 from collections import deque
 from difflib import SequenceMatcher
-from gi.repository import Gtk, Gdk
 import io
 
 # UTILITY FUNCTIONS
@@ -40,6 +41,37 @@ def write_to_file(filename, content):
             f.write(content)
 
 # CLASS DEFINITIONS
+class ProjectManager:
+    """
+    This class initializes and analyzes a project's files. This prepares
+    the data to be used by the Collections.
+    """
+    def __init__:
+        # dir_dict maps the project's directory
+        self._dir_dict = {resrc=[], segs=[], meta=[]}
+
+    def initProject:
+        pass
+
+    def readProject:
+        pass
+
+    def writeProject:
+        pass
+
+
+class Resource:
+    """
+    This class represents the data about resources in the work, including
+    characters, places, references, etc. It is similar to a Segment.
+    """
+    pass
+
+class ResourceCollection:
+    """
+    This class is similar to SegmentCollection, but for Resources.
+    """
+    pass
 
 class Segment:
     """
@@ -47,12 +79,8 @@ class Segment:
     """
     def __init__(self, filename, content):
 
-        # creates TextBuffer and Clipboard
-        self._buffer = Gtk.TextBuffer()
-        self._buffer.set_text(content)
-
-        self._clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
-        self._buffer.add_selection_clipboard(self._clipboard)
+        # stores the text as a string
+        self._text = content
 
         # instead of a file object, we keep/update the name only
         self._filename = filename
@@ -64,11 +92,8 @@ class Segment:
         # edits is the double ended queue (deque) for autosave feature
         self._edits = deque([None, content])
 
-        # connecting custom signal
-        self.sig_id = self._buffer.connect("changed", self.autosave)
-
     @staticmethod
-    def new(filename="untitled", content=welcome_message):
+    def new(filename="untitled", content="DEFAULT TEXT"):
         new = Segment(filename, content)
         return new
 
@@ -78,20 +103,13 @@ class Segment:
         return self._edits[0]
 
     @property
-    def buffer(self):
-        return self._buffer
-
-    @property
-    def clipboard(self):
-        return self._clipboard
-
-    @property
     def curr_text(self):
-        return self._buffer.props.text
+        return self._text
 
     @curr_text.setter
     def curr_text(self, value):
-        self._buffer.set_text(value, len(value))
+        if isinstance(value, str):
+            self._text = value
 
     @property
     def edits(self):
@@ -136,52 +154,29 @@ class Segment:
         """
         Reverts TextBuffer to earlier state, from the edits deque
         """
-        with self.buffer.handler_block(self.sig_id):
-            # because autosave is not the most current edit
-            if self.base_edit is None:
-                self.edits.append(self.curr_text)
+        # because autosave is not the most current edit
+        if self.base_edit is None:
+            self.edits.append(self.curr_text)
 
-            # rotate the most recent addition to the back of the deque
-            self.edits.rotate(1)
+        # rotate the most recent addition to the back of the deque
+        self.edits.rotate(1)
 
-            # if prev_edit is None, we've rotated all the way around
-            if self.prev_edit:
-                self.curr_text = self.prev_edit
-            else:
-                print("Nothing to undo")
+        # if prev_edit is None, we've rotated all the way around
+        if self.prev_edit:
+            self.curr_text = self.prev_edit
+        else:
+            print("Nothing to undo")
 
     def redo(self):
         """
         Reverts TextBuffer to later state, if it still exists
         """
-        with self.buffer.handler_block(self.sig_id):
-            # if base_edit is None, we've rotated all the way back
-            if self.base_edit:
-                self.edits.rotate(-1)
-                self.curr_text = self.prev_edit
-            else:
-                print("Nothing to redo")
-
-    # CUT/COPY/PASTE BUTTON METHODS
-    def cut(self):
-        """
-        Basic edit/cut function
-        """
-        if self.buffer.get_has_selection():
-            self.buffer.cut_clipboard(self.clipboard, True)
-
-    def copy(self):
-        """
-        Basic edit/copy function
-        """
-        if self.buffer.get_has_selection():
-            self.buffer.copy_clipboard(self.clipboard)
-
-    def paste(self):
-        """
-        Basic edit/paste function
-        """
-        self.buffer.paste_clipboard(self.clipboard, None, True)
+        # if base_edit is None, we've rotated all the way back
+        if self.base_edit:
+            self.edits.rotate(-1)
+            self.curr_text = self.prev_edit
+        else:
+            print("Nothing to redo")
 
 class SegmentCollection:
     """
@@ -191,36 +186,18 @@ class SegmentCollection:
     """
     pass
 
-class Resource:
-    """
-    This class represents the data about resources in the work, including
-    characters, places, references, etc. It is similar to a Segment.
-    """
-    pass
-
-class ResourceCollection:
-    """
-    This class is similar to SegmentCollection, but for Resources.
-    """
-    pass
-
 """
 I want the Application class to be rewritten to be a CommandParser.
 It's similar to an event handler, but CommandParser will interface
 with the back end. Front ends should invoke these methods.
 """
 
-class Application:
+class CommandParser:
     """
-    Controller for Word Agent. Connects signals for windows
+    Controller for Word Agent.
     """
     def __init__(self):
         self.seg = Segment.new()
-        self.win = EditorWindow()
-        self.win.view.set_buffer(self.seg.buffer)
-
-        # boolean for File/Save(as) functions
-        self.file_is_saved_as = False
 
         # button keywords match from EditorWindow.buttons
         self.handlers = {
@@ -385,15 +362,7 @@ class Application:
         """
         self.win.dialog_help()
 
-def main():
-    """
-    Gets things rolling
-    """
-    print("Starting Word Agent")
-    app = Application()
-    Gtk.main()
-
 if __name__ == '__main__':
-    main()
+    print("The backend is not done yet."
 else:
     print("Word Agent, by Sam Hatfield. Enjoy!")
