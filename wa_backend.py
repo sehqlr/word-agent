@@ -34,7 +34,7 @@ def read_from_file(filename):
 
 def write_to_file(filename, content):
     """
-    Writes content to filename on disk
+    Writes text content to filename on disk
     """
     if filename:
         with open(filename, "w") as f:
@@ -46,17 +46,35 @@ class ProjectManager:
     This class initializes and analyzes a project's files. This prepares
     the data to be used by the Collections.
     """
-    def __init__:
-        # dir_dict maps the project's directory
-        self._dir_dict = {resrc=[], segs=[], meta=[]}
+    def __init__(self):
+        # _dir_map maps the project's directory
+        self._metadata_file = ""
+        self._dir_root = ""
+        self._seg_map = []
+        self._resrc_map = []
 
-    def initProject:
+    def initProject(self):
+        """
+        This creates the directory structure for a new project
+        """
+        # PSEUDOCODE:
+        # Define _metadata_file
+        # Define _dir_root
+        # Define _seg_map
+        # Define _resrc_map
         pass
 
-    def readProject:
+    def readProject(self):
+        """
+        This loads in an existing project's files, and creates objects
+        to load it into RAM
+        """
         pass
 
-    def writeProject:
+    def writeProject(self):
+        """
+        This saves the data to disk
+        """
         pass
 
 
@@ -65,7 +83,27 @@ class Resource:
     This class represents the data about resources in the work, including
     characters, places, references, etc. It is similar to a Segment.
     """
-    pass
+    def __init__(self):
+
+        self.fields = {
+                "type": None,
+                "name": None,
+                "notes": None,
+                "img": None,
+                "appears_in": None #Matches from self.find()
+                }
+    
+    @staticmethod
+    def find(resource):
+        """
+        Compiles a re to find the resource within the segments
+        """
+        pass
+
+    @staticmethod
+    def new():
+        # Resource.find()
+        pass
 
 class ResourceCollection:
     """
@@ -94,8 +132,7 @@ class Segment:
 
     @staticmethod
     def new(filename="untitled", content="DEFAULT TEXT"):
-        new = Segment(filename, content)
-        return new
+        return Segment(filename, content)
 
     # properties, listed alphabetically
     @property
