@@ -1,3 +1,5 @@
+# This loads in NLTK when the python shells inits
+
 print("Running commands")
 
 try:
