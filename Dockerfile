@@ -2,11 +2,9 @@
 FROM python
 MAINTAINER sehqlr
 
-# Build image, including NLTK
+# install requirements and set up RC for python shell
 RUN apt-get update && apt-get install -y python-dev git vim
-RUN pip install -r requirements.txt
-
-# Get project data, set RC for python shell
 ADD . /code
+RUN pip install -r requirements.txt
 ENV PYTHONSTARTUP /code/scripts/pythonrc
 

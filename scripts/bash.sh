@@ -1,2 +1,2 @@
 #!/bin/bash
-sudo docker run -it nltk bash
+sudo docker run -it word-agent bash

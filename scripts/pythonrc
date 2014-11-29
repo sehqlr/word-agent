@@ -9,11 +9,4 @@ except ImportError:
 else:
 		print("NLTK imported successfully")
 
-try:
-		from nltk.book import *
-except ImportError:
-		print("NLTK data unavailable")
-else:
-		print("NLTK data loaded successfully")
-
 print("Finished RC")
