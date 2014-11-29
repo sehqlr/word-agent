@@ -11,7 +11,7 @@ Welcome to the Word Agent, the novel project management app!
 
 Keyboard shortcuts are listed in the Help message (Press F1).
 
-If you have any questions, concerns, or comments, please create an
+If you have any questions, concerns, or comments, please create an \
 issue on our GitHub page or email me with the details.
 """
 
@@ -19,7 +19,9 @@ issue on our GitHub page or email me with the details.
 
 
 def read_from_file(filename):
-    """Opens, reads, and returns the text contents of filename"""
+    """
+    Opens, reads, and returns the text contents of filename
+    """
     content = ""
     if filename:
         with open(filename, "r") as textfile:
@@ -28,7 +30,9 @@ def read_from_file(filename):
     return content
 
 def write_to_file(filename, content):
-    """Writes content to filename on disk"""
+    """
+    Writes content to filename on disk
+    """
     if filename:
         with open(filename, "w") as f:
             f.write(content)
@@ -36,7 +40,9 @@ def write_to_file(filename, content):
 # CLASS DEFINITIONS
 
 class Segment:
-    """Model for Word Agent. Encapsulates a segment"""
+    """
+    Model for Word Agent. Encapsulates a segment
+    """
     def __init__(self, filename, content):
 
         # creates TextBuffer and Clipboard
@@ -112,7 +118,9 @@ class Segment:
 
     # AUTOSAVE METHOD
     def autosave(self, widget):
-        """If enough changes have been made, add text to edits"""
+        """
+        If enough changes have been made, add text to edits deque
+        """
         # IDEA: percentage here could be changed in Settings.
         if self.prev_edit is None:
             self.edits.append("")
@@ -128,21 +136,29 @@ class Segment:
 
     # UNDO/REDO METHODS
     def undo(self):
-        """Reverts TextBuffer to earlier state, from the edits deque"""
+        """
+        Reverts TextBuffer to earlier state, from the edits deque
+        """
         with self.buffer.handler_block(self.sig_id):
+            # because autosave is not the most current edit
             if self.base_edit is None:
                 self.edits.append(self.curr_text)
 
+            # rotate the most recent addition to the back of the deque
             self.edits.rotate(1)
 
+            # if prev_edit is None, we've rotated all the way around
             if self.prev_edit:
                 self.curr_text = self.prev_edit
             else:
                 print("Nothing to undo")
 
     def redo(self):
-        """Reverts TextBuffer to later state, if it still exists"""
+        """
+        Reverts TextBuffer to later state, if it still exists
+        """
         with self.buffer.handler_block(self.sig_id):
+            # if base_edit is None, we've rotated all the way back
             if self.base_edit:
                 self.edits.rotate(-1)
                 self.curr_text = self.prev_edit
@@ -151,22 +167,30 @@ class Segment:
 
     # CUT/COPY/PASTE BUTTON METHODS
     def cut(self):
-        """Basic edit/cut function"""
+        """
+        Basic edit/cut function
+        """
         if self.buffer.get_has_selection():
             self.buffer.cut_clipboard(self.clipboard, True)
 
     def copy(self):
-        """Basic edit/copy function"""
+        """
+        Basic edit/copy function
+        """
         if self.buffer.get_has_selection():
             self.buffer.copy_clipboard(self.clipboard)
 
     def paste(self):
-        """Basic edit/paste function"""
+        """
+        Basic edit/paste function
+        """
         self.buffer.paste_clipboard(self.clipboard, None, True)
 
 
 class EditorWindow(Gtk.Window):
-    """View for word-agent. Hardcodes UI definitions"""
+    """
+    View for word-agent. Hardcodes UI definitions
+    """
     def __init__(self):
 
         # basic init stuff for window
@@ -183,7 +207,10 @@ class EditorWindow(Gtk.Window):
 
         self.create_toolbar()
 
-        # make scrolled text view
+        # boolean to keep track of fullscreen
+        self.is_fullscreen = False
+
+        # scrolled window to contain TextView
         self.scroll = Gtk.ScrolledWindow.new(None, None)
         self.box.pack_start(self.scroll, True, True, 0)
 
@@ -192,17 +219,17 @@ class EditorWindow(Gtk.Window):
         self.view.set_wrap_mode(2)
         self.scroll.add(self.view)
 
-    # TODO: create properties to access objects in EditorWindow
-
     # DIALOG METHODS
     def dialog_about(self):
-        """Launch an About dialog window"""
+        """
+        Launch an About dialog window
+        """
 
         # build an about dialog
         dialog = Gtk.AboutDialog.new()
         dialog.set_program_name("Word Agent")
         dialog.set_authors(["Sam Hatfield", None])
-        dialog.set_version("0.2.2")
+        dialog.set_version("0.2.3-dev")
         dialog.set_website("https://github.com/sehqlr/word-agent")
         dialog.set_website_label("Fork us on GitHub!")
         dialog.set_comments("A simple text editor with a big future.")
@@ -211,12 +238,13 @@ class EditorWindow(Gtk.Window):
         # wait until user closes dialog
         response = dialog.run()
         if response:
-            print("About closed")
             dialog.destroy()
 
     # TODO: Add file type filters to FileChoose dialogs
     def dialog_file_open(self):
-        """Launch a File/Open dialog window"""
+        """
+        Launch a File/Open dialog window
+        """
         dialog = Gtk.FileChooserDialog("Open a project", None,
             Gtk.FileChooserAction.OPEN,
             (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
@@ -232,7 +260,7 @@ class EditorWindow(Gtk.Window):
         filter_all.set_name("All")
         filter_all.add_pattern("*")
 
-        # add filter, set overwrite alert to yes
+        # add filters, set overwrite alert to yes
         dialog.add_filter(filter_text)
         dialog.add_filter(filter_all)
         dialog.set_do_overwrite_confirmation(True)        
@@ -248,7 +276,9 @@ class EditorWindow(Gtk.Window):
             return None
 
     def dialog_file_save_as(self):
-        """Launch a File/Save dialog window"""
+        """
+        Launch a File/Save dialog window
+        """
         dialog = Gtk.FileChooserDialog("Save your project", None,
             Gtk.FileChooserAction.SAVE,
             (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
@@ -264,7 +294,7 @@ class EditorWindow(Gtk.Window):
         filter_all.set_name("All")
         filter_all.add_pattern("*")
 
-        # add filter, set overwrite alert to yes
+        # add filters, set overwrite alert to yes
         dialog.add_filter(filter_text)
         dialog.add_filter(filter_all)
         dialog.set_do_overwrite_confirmation(True)        
@@ -280,13 +310,17 @@ class EditorWindow(Gtk.Window):
             return None
 
     def dialog_help(self):
-        """Launch a help message"""
+        """
+        Launch a help message
+        """
         shortcuts = """
-FILE/EDIT SHORTCUTS:
+FILE SHORTCUTS:
 Control + N = New File
 Control + O = Open File
 Control + S = Save File
 Control + Shift + S = Save File As
+
+EDIT SHORTCUTS:
 Control + Z = Undo Edit
 Control + Y = Redo Edit
 Control + X = Cut Selection
@@ -297,6 +331,11 @@ VIEW SHORTCUTS
 F1 = Help
 F2 = About
 F3 = Toggle Toolbar
+
+F11 = Toggle Fullscreen
+
+OTHER SHORTCUTS
+Control + Q = Quit Program
 """
         # generate help message dialog    
         dialog = Gtk.MessageDialog(message_format="Keyboard Shortcuts")
@@ -306,14 +345,15 @@ F3 = Toggle Toolbar
 
         response = dialog.run()
         if response:
-            print("Help closed")
             dialog.destroy()
 
     # UI DEFINITION METHODS
     # IDEA: Loading glade files and CSS?
 
     def create_toolbar(self):
-        """Loads toolbar with 10 stock buttons, adds to buttons dictionary"""
+        """
+        Loads toolbar with 10 stock buttons, adds them to dict
+        """
         self.toolbar = Gtk.Toolbar.new()
         self.box.pack_start(self.toolbar, False, False, 0)
         buttons = self.buttons
@@ -321,7 +361,7 @@ F3 = Toggle Toolbar
         # NEW button
         button_new = Gtk.ToolButton.new_from_stock(Gtk.STOCK_NEW)
         self.toolbar.insert(button_new, 0)
-        self.buttons["file_new"] = button_new
+        buttons["file_new"] = button_new
 
         # OPEN button
         button_open = Gtk.ToolButton.new_from_stock(Gtk.STOCK_OPEN)
@@ -334,9 +374,9 @@ F3 = Toggle Toolbar
         buttons["file_save"] = button_save
 
         # SAVE AS button
-        button_saveas = Gtk.ToolButton.new_from_stock(Gtk.STOCK_SAVE_AS)
-        self.toolbar.insert(button_saveas, 3)
-        buttons["file_saveas"] = button_saveas
+        button_save_as = Gtk.ToolButton.new_from_stock(Gtk.STOCK_SAVE_AS)
+        self.toolbar.insert(button_save_as, 3)
+        buttons["file_save_as"] = button_save_as
 
         # UNDO button
         button_undo = Gtk.ToolButton.new_from_stock(Gtk.STOCK_UNDO)
@@ -366,11 +406,13 @@ F3 = Toggle Toolbar
         # ABOUT button
         button_about = Gtk.ToolButton.new_from_stock(Gtk.STOCK_ABOUT)
         self.toolbar.insert(button_about, 9)
-        buttons["about"] = button_about
+        buttons["view_about"] = button_about
 
 
 class Application:
-    """Controller for Word Agent. Connects signals for window"""
+    """
+    Controller for Word Agent. Connects signals for windows
+    """
     def __init__(self):
         self.seg = Segment.new()
         self.win = EditorWindow()
@@ -384,7 +426,7 @@ class Application:
             "file_new": self.do_file_new,
             "file_open": self.do_file_open,
             "file_save": self.do_file_save,
-            "file_saveas": self.do_file_saveas,
+            "file_save_as": self.do_file_save_as,
             "edit_undo": self.do_edit_undo,
             "edit_redo": self.do_edit_redo,
             "edit_cut": self.do_edit_cut,
@@ -392,7 +434,8 @@ class Application:
             "edit_paste": self.do_edit_paste,
             "view_about": self.do_view_about,
             "view_help": self.do_view_help,
-            "view_typewriter": self.do_view_toggle_toolbar
+            "view_typewriter": self.do_view_typewriter,
+            "view_fullscreen": self.do_view_fullscreen,
             }
 
         self.connections()
@@ -419,13 +462,15 @@ class Application:
     def execute_operation(self, widget, event):
         keystroke = Gtk.accelerator_get_label(event.keyval, event.state)
         if "Ctrl" in keystroke:
-            if "N" in keystroke:
+            if "Q" in keystroke:
+                Gtk.main_quit()
+            elif "N" in keystroke:
                 self.handlers["file_new"](None)
             elif "O" in keystroke:
                 self.handlers["file_open"](None)
             elif "S" in keystroke:
                 if "Shift" in keystroke:
-                    self.handlers["file_saveas"](None)
+                    self.handlers["file_save_as"](None)
                 else:
                     self.handlers["file_save"](None)
             elif "Z" in keystroke:
@@ -433,7 +478,10 @@ class Application:
             elif "Y" in keystroke:
                 self.handlers["edit_redo"](None)
         elif "F1" in keystroke:
-            self.handlers["view_help"](None)
+            if "F11" in keystroke:
+                self.handlers["view_fullscreen"](None)
+            else:
+                self.handlers["view_help"](None)
         elif "F2" in keystroke:
             self.handlers["view_about"](None)
         elif "F3" in keystroke:
@@ -441,22 +489,25 @@ class Application:
 
     # FILE handlers
     def do_file_new(self, widget):
-        """Create a new Segment, with default filename and content"""
-        print("HANDLER: do_file_new")
+        """
+        Create a new Segment, with default filename and content
+        """
         self.change_buffer()
         self.file_is_saved_as = False
 
     def do_file_open(self, widget):
-        """Loads text from a file and creates Segment with that text"""
-        print("HANDLER: do_file_open")
+        """
+        Loads text from a file and creates Segment with that text
+        """
         filename = self.win.dialog_file_open()
         if filename:
             self.change_buffer(filename)
             self.file_is_saved_as = True
 
     def do_file_save(self, widget):
-        """Overwrites old file, prompts file/save-as if needed"""
-        print("HANDLER: do_file_save")
+        """
+        Overwrites old file, prompts file/save-as if needed
+        """
         if self.file_is_saved_as is False:
             self.seg.filename = self.win.dialog_file_save_as()
 
@@ -464,57 +515,81 @@ class Application:
             write_to_file(self.seg.filename, self.seg.curr_text)
             self.file_is_saved_as = True
 
-    def do_file_saveas(self, widget):
-        """Ensures file/save-as prompt for do_file_save"""
-        print("HANDLER: do_file_saveas")
+    def do_file_save_as(self, widget):
+        """
+        Ensures Save As... prompt for do_file_save
+        """
         self.file_is_saved_as = False
         self.do_file_save(widget)
 
     # EDIT handlers
     def do_edit_undo(self, widget):
-        """Blocks custom signal for buffer to traverse autosave deque"""
-        print("HANDLER: do_edit_undo")
+        """
+        Sets the text back one edit
+        """
         self.seg.undo()
 
     def do_edit_redo(self, widget):
-        """Moves the opposite way of undo in autosave deque"""
-        print("HANDLER: do_edit_redo")
+        """
+        The opposite of undo
+        """
         self.seg.redo()
 
     def do_edit_cut(self, widget):
-        """Implements basic edit/cut"""
-        print("HANDLER: do_edit_cut")
+        """
+        Implements basic edit/cut
+        """
         self.seg.cut()
 
     def do_edit_copy(self, widget):
-        """Implements basic edit/copy"""
-        print("HANDLER: do_edit_copy")
+        """
+        Implements basic edit/copy
+        """
         self.seg.copy()
 
     def do_edit_paste(self, widget):
-        """Implements basic edit/paste"""
-        print("HANDLER: do_edit_paste")
+        """
+        Implements basic edit/paste
+        """
         self.seg.paste()
 
     # VIEW handlers
-    def do_view_toggle_toolbar(self, widget):
-        """Toggles whether the toolbar is visible"""
+    def do_view_typewriter(self, widget):
+        """
+        Toggles whether the toolbar is visible
+        """
         if self.win.toolbar.get_visible():
             self.win.toolbar.set_visible(False)
         else:
             self.win.toolbar.set_visible(True)
 
     def do_view_about(self, widget):
-        """Launches about dialog from MainWindow"""
-        print("HANDLER: on_about")
+        """
+        Launches about dialog from MainWindow
+        """
         self.win.dialog_about()
 
+    def do_view_fullscreen(self, widget):
+        """
+        Toggles fullscreen mode
+        """
+        if self.win.is_fullscreen:
+            self.win.unfullscreen()
+            self.win.is_fullscreen = False
+        else:
+            self.win.fullscreen()
+            self.win.is_fullscreen = True
+
     def do_view_help(self, widget):
-        """Launches help dialog from MainWindow"""
+        """
+        Launches help dialog from MainWindow
+        """
         self.win.dialog_help()
 
 def main():
-    """Gets things rolling"""
+    """
+    Gets things rolling
+    """
     print("Starting Word Agent")
     app = Application()
     Gtk.main()
