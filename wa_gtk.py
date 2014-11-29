@@ -67,10 +67,15 @@ class Segment:
 
     @staticmethod
     def new(filename="untitled", content=welcome_message):
+        """This includes default values for the Segment constructor"""
         new = Segment(filename, content)
         return new
 
     # properties, listed alphabetically
+    @property
+    def base_edit(self):
+        return self._edits[0]
+
     @property
     def base_edit(self):
         return self._edits[0]
@@ -187,6 +192,7 @@ class EditorWindow(Gtk.Window):
     View for word-agent. Hardcodes UI definitions
     """
     def __init__(self):
+
         # basic init stuff for window
         Gtk.Window.__init__(self, title="Word Agent")
         self.connect("destroy", Gtk.main_quit)
@@ -198,6 +204,7 @@ class EditorWindow(Gtk.Window):
 
         # button_dict keeps a list of button objects, and their handlers
         self.buttons = {}
+
         self.create_toolbar()
 
         # boolean to keep track of fullscreen
@@ -233,6 +240,7 @@ class EditorWindow(Gtk.Window):
         if response:
             dialog.destroy()
 
+    # TODO: Add file type filters to FileChoose dialogs
     def dialog_file_open(self):
         """
         Launch a File/Open dialog window
@@ -436,11 +444,13 @@ class Application:
         self.win.connect("key-press-event", self.execute_operation)
 
     def connections(self):
+        """Uses buttons and handlers dicts to connect widget signals"""
         for name, widget in self.win.buttons.items():
             if name in self.handlers:
                 widget.connect("clicked", self.handlers[name])
 
     def change_buffer(self, filename=None):
+        """Creates a new buffer, with defaults or content from disk"""
         text = read_from_file(filename)
         if text is "":
             self.seg = Segment.new()
