@@ -9,5 +9,5 @@ RUN apt-get update \
 		&& python -m nltk.downloader book 
 
 # Get project data, set RC for python shell
-RUN git clone https://github.com/sehqlr/word-agent.git /home/word-agent
-RUN export PYTHONSTARTUP="home/word-agent/pythonrc"
+ADD . /home/word-agent
+ENV PYTHONSTARTUP home/word-agent/pythonrc
