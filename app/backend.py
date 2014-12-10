@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#! /usr/bin/env python
 # file: wa_backend.py
 
 """
@@ -10,9 +10,7 @@ Then, the GTK front end module will have most of the same functionality,
 except with an import from here.
 
 I'm going to make sure that this module is complete before I remove
-functionality from the 'classic version'. Obviously, I won't push these
-changes to the master branch until it is stable. Then I think I can call
-it v0.3.
+functionality from the 'classic version'. 
 """
 
 from collections import deque
@@ -41,42 +39,34 @@ def write_to_file(filename, content):
             f.write(content)
 
 # CLASS DEFINITIONS
-class ProjectManager:
+class Project:
     """
     This class initializes and analyzes a project's files. This prepares
     the data to be used by the Collections.
     """
-    def __init__(self):
-        # _dir_map maps the project's directory
-        self._metadata_file = ""
-        self._dir_root = ""
-        self._seg_map = []
-        self._resrc_map = []
-
-    def initProject(self):
+    def __init__(self, root_dir):
         """
-        This creates the directory structure for a new project
+        This loads in the metadata file for a project
         """
-        # PSEUDOCODE:
-        # Define _metadata_file
-        # Define _dir_root
-        # Define _seg_map
-        # Define _resrc_map
-        pass
+        self._root_dir = root_dir
+        self._metadata_file = read_from_file(None) #TODO: implement parsing of a metadata file. This is the main purpose of the constructor
 
-    def readProject(self):
+    @staticmethod
+    def new(self, root_dir):
+        return Project(root_dir)
+
+    def read(self):
         """
         This loads in an existing project's files, and creates objects
         to load it into RAM
         """
         pass
 
-    def writeProject(self):
+    def write(self):
         """
         This saves the data to disk
         """
         pass
-
 
 class Resource:
     """
@@ -103,13 +93,7 @@ class Resource:
     @staticmethod
     def new():
         # Resource.find()
-        pass
-
-class ResourceCollection:
-    """
-    This class is similar to SegmentCollection, but for Resources.
-    """
-    pass
+        return Resource()
 
 class Segment:
     """
@@ -169,7 +153,7 @@ class Segment:
         return self._edits[-1]
 
     # AUTOSAVE METHOD
-    def autosave(self, widget):
+    def autosave(self):
         """
         If enough changes have been made, add text to edits deque
         """
@@ -215,23 +199,13 @@ class Segment:
         else:
             print("Nothing to redo")
 
-class SegmentCollection:
-    """
-    This class will be a factory for Segments, loading text from disk to RAM, 
-    then passing the data to the front end as needed. I want to have this
-    perform most of the file I/O and OS operations.
-    """
-    pass
-
 """
-I want the Application class to be rewritten to be a CommandParser.
-It's similar to an event handler, but CommandParser will interface
-with the back end. Front ends should invoke these methods.
+Front ends should invoke these methods.
 """
 
-class CommandParser:
+class API:
     """
-    Controller for Word Agent.
+    API for Word Agent.
     """
     def __init__(self):
         self.seg = Segment.new()
@@ -244,24 +218,7 @@ class CommandParser:
             "file_save_as": self.do_file_save_as,
             "edit_undo": self.do_edit_undo,
             "edit_redo": self.do_edit_redo,
-            "edit_cut": self.do_edit_cut,
-            "edit_copy": self.do_edit_copy,
-            "edit_paste": self.do_edit_paste,
-            "view_about": self.do_view_about,
-            "view_help": self.do_view_help,
-            "view_typewriter": self.do_view_typewriter,
-            "view_fullscreen": self.do_view_fullscreen,
             }
-
-        self.connections()
-        self.win.show_all()
-
-        self.win.connect("key-press-event", self.execute_operation)
-
-    def connections(self):
-        for name, widget in self.win.buttons.items():
-            if name in self.handlers:
-                widget.connect("clicked", self.handlers[name])
 
     def change_buffer(self, filename=None):
         text = read_from_file(filename)
@@ -271,34 +228,6 @@ class CommandParser:
         else:
             self.seg = Segment.new(filename=filename, content=text)
             self.win.view.set_buffer(self.seg.buffer)
-
-    def execute_operation(self, widget, event):
-        keystroke = Gtk.accelerator_get_label(event.keyval, event.state)
-        if "Ctrl" in keystroke:
-            if "Q" in keystroke:
-                Gtk.main_quit()
-            elif "N" in keystroke:
-                self.handlers["file_new"](None)
-            elif "O" in keystroke:
-                self.handlers["file_open"](None)
-            elif "S" in keystroke:
-                if "Shift" in keystroke:
-                    self.handlers["file_save_as"](None)
-                else:
-                    self.handlers["file_save"](None)
-            elif "Z" in keystroke:
-                self.handlers["edit_undo"](None)
-            elif "Y" in keystroke:
-                self.handlers["edit_redo"](None)
-        elif "F1" in keystroke:
-            if "F11" in keystroke:
-                self.handlers["view_fullscreen"](None)
-            else:
-                self.handlers["view_help"](None)
-        elif "F2" in keystroke:
-            self.handlers["view_about"](None)
-        elif "F3" in keystroke:
-            self.handlers["view_typewriter"](None)
 
     # FILE handlers
     def do_file_new(self, widget):
@@ -347,57 +276,6 @@ class CommandParser:
         The opposite of undo
         """
         self.seg.redo()
-
-    def do_edit_cut(self, widget):
-        """
-        Implements basic edit/cut
-        """
-        self.seg.cut()
-
-    def do_edit_copy(self, widget):
-        """
-        Implements basic edit/copy
-        """
-        self.seg.copy()
-
-    def do_edit_paste(self, widget):
-        """
-        Implements basic edit/paste
-        """
-        self.seg.paste()
-
-    # VIEW handlers
-    def do_view_typewriter(self, widget):
-        """
-        Toggles whether the toolbar is visible
-        """
-        if self.win.toolbar.get_visible():
-            self.win.toolbar.set_visible(False)
-        else:
-            self.win.toolbar.set_visible(True)
-
-    def do_view_about(self, widget):
-        """
-        Launches about dialog from MainWindow
-        """
-        self.win.dialog_about()
-
-    def do_view_fullscreen(self, widget):
-        """
-        Toggles fullscreen mode
-        """
-        if self.win.is_fullscreen:
-            self.win.unfullscreen()
-            self.win.is_fullscreen = False
-        else:
-            self.win.fullscreen()
-            self.win.is_fullscreen = True
-
-    def do_view_help(self, widget):
-        """
-        Launches help dialog from MainWindow
-        """
-        self.win.dialog_help()
 
 if __name__ == '__main__':
     print("The backend is not done yet."

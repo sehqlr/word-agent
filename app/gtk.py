@@ -1,5 +1,7 @@
 #! /usr/bin/env python3
 
+import backend as wa
+
 from collections import deque
 from difflib import SequenceMatcher
 from gi.repository import Gtk, Gdk
@@ -14,28 +16,6 @@ Keyboard shortcuts are listed in the Help message (Press F1).
 If you have any questions, concerns, or comments, please create an \
 issue on our GitHub page or email me with the details.
 """
-
-# UTILITY FUNCTIONS
-
-
-def read_from_file(filename):
-    """
-    Opens, reads, and returns the text contents of filename
-    """
-    content = ""
-    if filename:
-        with open(filename, "r") as textfile:
-            for line in textfile:
-                content += line
-    return content
-
-def write_to_file(filename, content):
-    """
-    Writes content to filename on disk
-    """
-    if filename:
-        with open(filename, "w") as f:
-            f.write(content)
 
 # CLASS DEFINITIONS
 
@@ -451,7 +431,7 @@ class Application:
 
     def change_buffer(self, filename=None):
         """Creates a new buffer, with defaults or content from disk"""
-        text = read_from_file(filename)
+        text = wa.read_from_file(filename)
         if text is "":
             self.seg = Segment.new()
             self.win.view.set_buffer(self.seg.buffer)
@@ -512,7 +492,7 @@ class Application:
             self.seg.filename = self.win.dialog_file_save_as()
 
         if self.seg.filename:
-            write_to_file(self.seg.filename, self.seg.curr_text)
+            wa.write_to_file(self.seg.filename, self.seg.curr_text)
             self.file_is_saved_as = True
 
     def do_file_save_as(self, widget):
