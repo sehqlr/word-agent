@@ -1,2 +1,2 @@
 #!/bin/bash
-sudo docker run -it word-agent python
+sudo docker run -tip 5000:8880 --rm --name wa_instance word-agent python

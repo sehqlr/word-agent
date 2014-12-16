@@ -19,11 +19,14 @@ import io
 
 # UTILITY FUNCTIONS
 
+def error_msg(error):
+    return "A problem occured: {}".format(error)
+
 def read_from_file(filename):
     """
     Opens, reads, and returns the text contents of filename
     """
-    content = ""
+    content = None
     if filename:
         with open(filename, "r") as textfile:
             for line in textfile:
@@ -41,19 +44,28 @@ def write_to_file(filename, content):
 # CLASS DEFINITIONS
 class Project:
     """
-    This class initializes and analyzes a project's files. This prepares
-    the data to be used by the Collections.
+    This class initializes and analyzes a project's files. 
     """
-    def __init__(self, root_dir):
+    def __init__(self, metadata_file):
         """
         This loads in the metadata file for a project
         """
-        self._root_dir = root_dir
-        self._metadata_file = read_from_file(None) #TODO: implement parsing of a metadata file. This is the main purpose of the constructor
+        try:
+            self._metadata = read_from_file(metadata_file)
+        except IOError as e:
+            error_msg(e)
 
     @staticmethod
-    def new(self, root_dir):
-        return Project(root_dir)
+    def new(metadata_file):
+        return Project(metadata_file)
+
+    @property
+    def metadata(self):
+        return self._metadata
+
+    @metadata.setter
+    def metadata(self, value):
+        pass
 
     def read(self):
         """
@@ -68,7 +80,7 @@ class Project:
         """
         pass
 
-class Resource:
+class Resource: #TODO: Reimplement this as a JSON/YAML object
     """
     This class represents the data about resources in the work, including
     characters, places, references, etc. It is similar to a Segment.
@@ -97,12 +109,13 @@ class Resource:
 
 class Segment:
     """
-    Model for Word Agent. Encapsulates a segment
+    Encapsulates a segment, including the text, edit history, 
+    and lexical analysis. 
     """
-    def __init__(self, filename, content):
+    def __init__(self, filename, text):
 
         # stores the text as a string
-        self._text = content
+        self._text = text
 
         # instead of a file object, we keep/update the name only
         self._filename = filename
@@ -199,85 +212,59 @@ class Segment:
         else:
             print("Nothing to redo")
 
-"""
-Front ends should invoke these methods.
-"""
+#API functions
+api_handlers = {
+        "file": {
+            "new": do_file_new,
+            "open": do_file_open,
+            "save": do_file_save,
+            },
+        "edit": {
+            "undo": do_edit_undo,
+            "redo": do_edit_redo,
+            },
+        }
 
-class API:
+# FILE handlers
+def do_file_new( segment):
     """
-    API for Word Agent.
+    Create a new Segment, with default filename and content
     """
-    def __init__(self):
-        self.seg = Segment.new()
+    change_buffer()
+    file_is_saved_as = False
 
-        # button keywords match from EditorWindow.buttons
-        self.handlers = {
-            "file_new": self.do_file_new,
-            "file_open": self.do_file_open,
-            "file_save": self.do_file_save,
-            "file_save_as": self.do_file_save_as,
-            "edit_undo": self.do_edit_undo,
-            "edit_redo": self.do_edit_redo,
-            }
+def do_file_open( segment):
+    """
+    Loads text from a file and creates Segment with that text
+    """
+    filename = win.dialog_file_open()
+    if filename:
+        change_buffer(filename)
+        file_is_saved_as = True
 
-    def change_buffer(self, filename=None):
-        text = read_from_file(filename)
-        if text is "":
-            self.seg = Segment.new()
-            self.win.view.set_buffer(self.seg.buffer)
-        else:
-            self.seg = Segment.new(filename=filename, content=text)
-            self.win.view.set_buffer(self.seg.buffer)
+def do_file_save( segment):
+    """
+    Overwrites old file, prompts file/save-as if needed
+    """
+    if file_is_saved_as is False:
+        seg.filename = win.dialog_file_save_as()
 
-    # FILE handlers
-    def do_file_new(self, widget):
-        """
-        Create a new Segment, with default filename and content
-        """
-        self.change_buffer()
-        self.file_is_saved_as = False
+    if seg.filename:
+        write_to_file(seg.filename, seg.curr_text)
+        file_is_saved_as = True
 
-    def do_file_open(self, widget):
-        """
-        Loads text from a file and creates Segment with that text
-        """
-        filename = self.win.dialog_file_open()
-        if filename:
-            self.change_buffer(filename)
-            self.file_is_saved_as = True
+# EDIT handlers
+def do_edit_undo( segment):
+    """
+    Sets the text back one edit
+    """
+    seg.undo()
 
-    def do_file_save(self, widget):
-        """
-        Overwrites old file, prompts file/save-as if needed
-        """
-        if self.file_is_saved_as is False:
-            self.seg.filename = self.win.dialog_file_save_as()
-
-        if self.seg.filename:
-            write_to_file(self.seg.filename, self.seg.curr_text)
-            self.file_is_saved_as = True
-
-    def do_file_save_as(self, widget):
-        """
-        Ensures Save As... prompt for do_file_save
-        """
-        self.file_is_saved_as = False
-        self.do_file_save(widget)
-
-    # EDIT handlers
-    def do_edit_undo(self, widget):
-        """
-        Sets the text back one edit
-        """
-        self.seg.undo()
-
-    def do_edit_redo(self, widget):
-        """
-        The opposite of undo
-        """
-        self.seg.redo()
+def do_edit_redo( segment):
+    """
+    The opposite of undo
+    """
+    seg.redo()
 
 if __name__ == '__main__':
-    print("The backend is not done yet."
-else:
-    print("Word Agent, by Sam Hatfield. Enjoy!")
+    print("Unit tests have not been implemented yet.")
