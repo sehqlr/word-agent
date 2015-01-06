@@ -14,9 +14,14 @@ RUN apt-get update && apt-get install -y \
         vim \
         wget
 
+RUN wget http://download.redis.io/redis-stable.tar.gz && \
+        tar xvzf redis-stable.tar.gz && \
+        cd redis-stable && \
+        make && make install
+
 ADD . /code
 RUN pip install -r /code/requirements.txt
-ENV PYTHONSTARTUP /code/scripts/pythonrc
+ENV PYTHONSTARTUP /code/pythonrc
 EXPOSE 80
 WORKDIR /code
 CMD python server.py

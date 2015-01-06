@@ -1,5 +1,5 @@
 from flask import Flask, escape
-from app.backend import *
+from modules.backend import *
 
 app = Flask(__name__)
 
