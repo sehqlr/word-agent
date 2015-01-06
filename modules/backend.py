@@ -7,7 +7,11 @@ NOTE ABOUT THIS FILE:
 This is the backend of the RESTful API for Word Agent.
 
 I'm going to make sure that this module is complete before I remove
-functionality from the 'classic version'. 
+functionality from the 'classic version'.
+
+TODO: Reimplement the deque as a Redis data store.
+I'll be able to have multiple segments represented in memory
+with their own edit deques and other metadata.
 """
 
 from collections import deque
@@ -15,63 +19,45 @@ from difflib import SequenceMatcher
 import io
 
 # UTILITY FUNCTIONS
-
 def error_msg(error):
     return "A problem occured: {}".format(error)
 
-def read_from_file(filename):
-    """
-    Opens, reads, and returns the text contents of filename
-    """
-    content = None
-    if filename:
-        with open(filename, "r") as textfile:
-            for line in textfile:
-                content += line
-    return content
-
-def write_to_file(filename, content):
-    """
-    Writes text content to filename on disk
-    """
-    if filename:
-        with open(filename, "w") as f:
-            f.write(content)
-
 # CLASS DEFINITIONS
-class Project:
+class ProjectIO:
     """
-    This is the collection 
+    Performs IO operations/checking between RAM, disk, and networks
     """
     def __init__(self, metadata_file):
         """
         This loads in the metadata file for a project
         """
         try:
-            self._metadata = read_from_file(metadata_file)
+            self._metadata = read_file(metadata_file)
         except IOError as e:
             error_msg(e)
-
-    @staticmethod
-    def new(metadata_file):
-        return Project(metadata_file)
 
     @property
     def metadata(self):
         return self._metadata
 
-    def read(self):
+    def load_ram(self, filename):
         """
-        This loads in an existing project's files, and creates objects
-        to load it into RAM
+        Opens, reads, and returns the text contents of filename
         """
-        pass
+        content = None
+        if filename:
+            with open(filename, "r") as textfile:
+                for line in textfile:
+                    content += line
+        return content
 
-    def write(self):
+    def dump_ram(filename, content):
         """
-        This saves the data to disk
+        Writes text content to filename on disk
         """
-        pass
+        if filename:
+            with open(filename, "w") as f:
+                f.write(content)
 
 resource_fields = {
     "type": None,
@@ -81,16 +67,20 @@ resource_fields = {
     "appears_in": None #Matches from self.find()
 }
 
-class Segment: 
+class Segment:
     """
-    Encapsulates a segment, including the text, edit history, 
-    and lexical analysis. 
+    Encapsulates a segment, including the text, edit history,
+    and lexical analysis.
+
+    TODO: refactor to wrap around Redis functions for data
+    TODO: add in versioning scheme w/ diffs
+    TODO: add in lexical analysis wi/ NLTK
     """
     def __init__(self, text):
         """
         Requirements: deque
         """
-        self._edits = deque([None, "", text])
+        self._edits = deque([None, text])
 
     @staticmethod
     def new(content="DEFAULT TEXT"):
@@ -188,7 +178,6 @@ def do_file_new(segment):
     """
     Create a new Segment, with default filename and content
     """
-    change_buffer()
     file_is_saved_as = False
 
 def do_file_open(segment):
@@ -197,7 +186,6 @@ def do_file_open(segment):
     """
     filename = win.dialog_file_open()
     if filename:
-        change_buffer(filename)
         file_is_saved_as = True
 
 def do_file_save(segment):
@@ -208,7 +196,7 @@ def do_file_save(segment):
         seg.filename = win.dialog_file_save_as()
 
     if seg.filename:
-        write_to_file(seg.filename, seg.curr_text)
+        write_file(seg.filename, seg.curr_text)
         file_is_saved_as = True
 
 # EDIT handlers
