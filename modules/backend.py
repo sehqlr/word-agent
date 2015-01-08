@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 # file: backend.py
 
 """
@@ -22,43 +22,6 @@ import io, redis
 def error_msg(error):
     return "A problem occured: {}".format(error)
 
-# CLASS DEFINITIONS
-class ProjectIO:
-    """
-    Performs IO operations/checking between RAM, disk, and networks
-    """
-    def __init__(self):
-        """
-        This loads in the metadata file for a project
-        """
-        try:
-            self._redis_server = redis.Redis('localhost')
-        except IOError as e:
-            error_msg(e)
-
-    @property
-    def redis(self):
-        return self._redis_server
-
-    def insert(filename):
-        """
-        Opens, reads, and returns the text contents of filename
-        """
-        content = None
-        if filename:
-            with open(filename, "r") as textfile:
-                for line in textfile:
-                    content += line
-        return content
-
-    def export(filename, content):
-        """
-        Writes text content to filename on disk
-        """
-        if filename:
-            with open(filename, "w") as f:
-                f.write(content)
-
 resource_fields = {
     "type": None,
     "name": None,
@@ -77,10 +40,10 @@ class Segment:
     TODO: add in lexical analysis wi/ NLTK
     """
     def __init__(self, text):
-        """
-        Requirements: deque
-        """
-        self._edits = deque([None, text])
+
+        print("Result of r_server ping: " + str(r_server.ping()))
+        r_server.rpush("segment:edits", [None, text])
+
 
     @staticmethod
     def new(content="DEFAULT TEXT"):
@@ -164,11 +127,12 @@ class Segment:
 if __name__ == '__main__':
 
     print("Begin backend self testing")
-    project = ProjectIO()
+    r_server = redis.Redis()
 
-    if (project.redis.ping()):
+    if (r_server.ping()):
         print("Redis server ping sucessful")
     else:
         print("Redis server ping failed")
 
-
+    segment = Segment.new()
+    print("Contents of r_server: " + str(r_server.rpop("segment:edits")))
