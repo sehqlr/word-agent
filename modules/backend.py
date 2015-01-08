@@ -39,35 +39,42 @@ class Segment:
     TODO: add in versioning scheme w/ diffs
     TODO: add in lexical analysis wi/ NLTK
     """
-    def __init__(self, text):
+    def __init__(self, designation, content):
 
-        print("Result of r_server ping: " + str(r_server.ping()))
-        r_server.rpush("segment:edits", [None, text])
+        self._designation = str(designation)
+        r_server.rpush(self.edits, 'nil')
+        r_server.rpush(self.edits, content)
 
+        self._matcher = SequenceMatcher()
 
     @staticmethod
-    def new(content="DEFAULT TEXT"):
-        return Segment(content)
+    def new(designation="default_seg", content="DEFAULT TEXT"):
+        return Segment(designation, content)
 
     # properties, listed alphabetically
     @property
     def base_edit(self):
-        return self._edits[0]
+        base_edit = self.edits_list[0]
+        if base_edit != b'nil':
+            return base_edit.decode()
+        else:
+            return None
 
     @property
     def curr_edit(self):
-        return self._edits[-1]
+        return self.edits_list[-1].decode()
 
-    @curr_edit.setter
-    def curr_edit(self, value):
-        try:
-            self._edits[-1] = str(value)
-        except IOError as e:
-            error_msg(e)
+    @property
+    def edits(self):
+        return "segments:" + self._designation + ":edits"
 
     @property
     def edits_list(self):
-        return list(self._edits)
+        return r_server.lrange(self.edits, 0, -1)
+
+    @property
+    def redis_hash(self):
+        return self._designation
 
     @property
     def matcher(self):
@@ -75,23 +82,27 @@ class Segment:
 
     @property
     def prev_edit(self):
-        return self._edits[-2]
+        prev_edit = self.edits_list[-2]
+        if prev_edit != b'nil':
+            return prev_edit.decode()
+        else:
+            return None
 
     # SAVE METHOD
-    def save(self, text):
+    def add_edit(self, text):
         """
-        Add text to edits deque, as long as there have been changes
+        Add text to edits, as long as there have been changes
         """
         try:
             text = str(text)
-            if (text == self.curr_text):
+            if (text == self.curr_edit):
                 return False
 
-            self.edits.append(text)
+            r_server.rpush(self.edits, text)
 
             # clears out old edits using sentinel value
             while self.base_edit is not None:
-                self.edits.popleft()
+                r_server.lpop(self.edits)
 
             return True
         except IOError as e:
@@ -100,15 +111,13 @@ class Segment:
     # UNDO/REDO METHODS
     def undo(self):
         """
-        Reverts segment to earlier state, from the edits deque
+        Reverts segment to earlier state of edits
         """
 
-        # rotate the most recent addition to the back of the deque
-        self.edits.rotate(1)
-
-        # if prev_edit is None, we've rotated all the way around
+        # if prev_edit is None, we've rotated to oldest change
         if self.prev_edit:
-            self.curr_text = self.prev_edit
+            tmp = r_server.rpop(self.edits)
+            r_server.lpush(self.edits, tmp)
         else:
             print("Nothing to undo")
 
@@ -118,8 +127,8 @@ class Segment:
         """
         # if base_edit is None, we've rotated all the way back
         if self.base_edit:
-            self.edits.rotate(-1)
-            self.curr_text = self.prev_edit
+            tmp = r_server.lpop(self.edits)
+            r_server.rpush(self.edits, tmp)
         else:
             print("Nothing to redo")
 
@@ -128,11 +137,20 @@ if __name__ == '__main__':
 
     print("Begin backend self testing")
     r_server = redis.Redis()
+    r_server.delete("segment")
 
     if (r_server.ping()):
         print("Redis server ping sucessful")
     else:
         print("Redis server ping failed")
 
-    segment = Segment.new()
-    print("Contents of r_server: " + str(r_server.rpop("segment:edits")))
+    default_seg = Segment.new()
+    print("edits list after init: ", default_seg.edits_list)
+
+    test_edits = ["first", "second", "third", "fourth", "fifth"]
+    print("test edits list: ", test_edits)
+
+    for edit in test_edits:
+        default_seg.add_edit(edit)
+
+    print("edits list after adding test edits: ", default_seg.edits_list)
