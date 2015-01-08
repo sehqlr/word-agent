@@ -1,41 +1,16 @@
 #! /usr/bin/env python3
 # file: backend.py
 
-"""
-NOTE ABOUT THIS FILE:
-
-This is the backend of the RESTful API for Word Agent.
-
-I'm going to make sure that this module is complete before I remove
-functionality from the 'classic version'.
-
-TODO: Reimplement the deque as a Redis data store.
-I'll be able to have multiple segments represented in memory
-with their own edit deques and other metadata.
-"""
-
 from collections import deque
 from difflib import SequenceMatcher
 import io, redis
 
-# UTILITY FUNCTIONS
-def error_msg(error):
-    return "A problem occured: {}".format(error)
-
-resource_fields = {
-    "type": None,
-    "name": None,
-    "notes": None,
-    "img": None,
-    "appears_in": None #Matches from self.find()
-}
 
 class Segment:
     """
     Encapsulates a segment, including the text, edit history,
     and lexical analysis.
 
-    TODO: refactor to wrap around Redis functions for data
     TODO: add in versioning scheme w/ diffs
     TODO: add in lexical analysis wi/ NLTK
     """
@@ -62,7 +37,11 @@ class Segment:
 
     @property
     def curr_edit(self):
-        return self.edits_list[-1].decode()
+        curr_edit = self.edits_list[-1]
+        if curr_edit != b'nil':
+            return curr_edit.decode()
+        else:
+            return "The edit queue is empty"
 
     @property
     def edits(self):
@@ -88,32 +67,25 @@ class Segment:
         else:
             return None
 
-    # SAVE METHOD
     def add_edit(self, text):
         """
         Add text to edits, as long as there have been changes
         """
-        try:
-            text = str(text)
-            if (text == self.curr_edit):
-                return False
+        if (text == self.curr_edit):
+            return False
 
-            r_server.rpush(self.edits, text)
+        r_server.rpush(self.edits, text)
 
-            # clears out old edits using sentinel value
-            while self.base_edit is not None:
-                r_server.lpop(self.edits)
+        # clears out old edits using sentinel value
+        while self.base_edit is not None:
+            r_server.lpop(self.edits)
 
-            return True
-        except IOError as e:
-            error_msg(e)
+        return True
 
-    # UNDO/REDO METHODS
     def undo(self):
         """
         Reverts segment to earlier state of edits
         """
-
         # if prev_edit is None, we've rotated to oldest change
         if self.prev_edit:
             tmp = r_server.rpop(self.edits)
@@ -134,16 +106,20 @@ class Segment:
 
 
 if __name__ == '__main__':
-
     print("Begin backend self testing")
-    r_server = redis.Redis()
-    r_server.delete("segment")
+
+    print('Connecting to redis server, using db 14... ')
+    r_server = redis.Redis(db=14)
 
     if (r_server.ping()):
-        print("Redis server ping sucessful")
+        print("server ping sucessful")
     else:
-        print("Redis server ping failed")
+        print("server ping failed")
 
+    print("flushing db 14")
+    r_server.flushdb()
+
+    print("init default_segment")
     default_seg = Segment.new()
     print("edits list after init: ", default_seg.edits_list)
 
@@ -154,3 +130,13 @@ if __name__ == '__main__':
         default_seg.add_edit(edit)
 
     print("edits list after adding test edits: ", default_seg.edits_list)
+
+    print("undo action 3 times...")
+    for i in range(0,3):
+        default_seg.undo()
+        print("Undo #", i, ": ", default_seg.edits_list)
+
+    print("redo action 2 times")
+    for i in range(0,2):
+        default_seg.redo()
+        print("Redo #", i, ": ", default_seg.edits_list)
