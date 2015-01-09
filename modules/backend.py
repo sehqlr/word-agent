@@ -1,10 +1,8 @@
 #! /usr/bin/env python3
-# file: backend.py
+# file: modules/backend.py
 
-from collections import deque
 from difflib import SequenceMatcher
 import io, redis
-
 
 class Segment:
     """
@@ -20,11 +18,11 @@ class Segment:
         r_server.rpush(self.edits, 'nil')
         r_server.rpush(self.edits, content)
 
-        self._matcher = SequenceMatcher()
-
     @staticmethod
     def new(designation="default_seg", content="DEFAULT TEXT"):
-        return Segment(designation, content)
+        segment = Segment(designation, content)
+        print("new segment, redis hash", segment.redis_hash)
+        return segment
 
     # properties, listed alphabetically
     @property
@@ -54,10 +52,6 @@ class Segment:
     @property
     def redis_hash(self):
         return self._designation
-
-    @property
-    def matcher(self):
-        return self._matcher
 
     @property
     def prev_edit(self):
@@ -107,7 +101,7 @@ class Segment:
 
 if __name__ == '__main__':
     print("Begin backend self testing")
-
+    print()
     print('Connecting to redis server, using db 14... ')
     r_server = redis.Redis(db=14)
 
@@ -118,27 +112,54 @@ if __name__ == '__main__':
 
     print("flushing db 14")
     r_server.flushdb()
+    print()
 
     print("init default_segment")
     default_seg = Segment.new()
     print("edits list after init: ", default_seg.edits_list)
+    print("edits list length: ", len(default_seg.edits_list))
+    print()
 
-    words = ["first", "second", "third", "fourth", "fifth"]
+    words = ["first", "second", "third", "fourth"]
     test_edits = []
-    [test_edits.append(str(hash(word))) for word in words]
+    for word in words:
+        test_edits.append(word)
     print("test edits list: ", test_edits)
+    print("test edits length: ", len(test_edits))
+    print()
 
     for edit in test_edits:
         default_seg.add_edit(edit)
 
     print("edits list after adding test edits: ", default_seg.edits_list)
+    print("edits list length: ", len(default_seg.edits_list))
+    print()
 
-    print("undo action 3 times...")
-    for i in range(0,3):
+    print("testing undo action...")
+    for i in range(0,(len(words)-1)):
         default_seg.undo()
         print("Undo #", i, ": ", default_seg.edits_list)
+        print("edits list length: ", len(default_seg.edits_list))
+        print("base_edit: ", default_seg.base_edit)
+        print("prev_edit: ", default_seg.prev_edit)
+        print("curr_edit: ", default_seg.curr_edit)
+        print()
 
-    print("redo action 2 times")
-    for i in range(0,2):
+    print("testing redo action")
+    for i in range(0,(len(words)-3)):
         default_seg.redo()
         print("Redo #", i, ": ", default_seg.edits_list)
+        print("edits list length: ", len(default_seg.edits_list))
+        print("base_edit: ", default_seg.base_edit)
+        print("prev_edit: ", default_seg.prev_edit)
+        print("curr_edit: ", default_seg.curr_edit)
+        print()
+
+    print("add edit, should truncate old edits from list")
+    default_seg.add_edit("fifth")
+    print("edits list after adding new edit: ", default_seg.edits_list)
+    print("edits list length: ", len(default_seg.edits_list))
+    print("base_edit: ", default_seg.base_edit)
+    print("prev_edit: ", default_seg.prev_edit)
+    print("curr_edit: ", default_seg.curr_edit)
+    print()
