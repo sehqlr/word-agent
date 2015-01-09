@@ -123,7 +123,9 @@ if __name__ == '__main__':
     default_seg = Segment.new()
     print("edits list after init: ", default_seg.edits_list)
 
-    test_edits = ["first", "second", "third", "fourth", "fifth"]
+    words = ["first", "second", "third", "fourth", "fifth"]
+    test_edits = []
+    [test_edits.append(str(hash(word))) for word in words]
     print("test edits list: ", test_edits)
 
     for edit in test_edits:
