@@ -2,8 +2,8 @@
 from flask import Flask, request, render_template, flash, url_for, redirect
 import redis
 
-from modules.backend import *
-from modules.dispatch import *
+from modules.backend import Segment
+from modules.dispatch import dispatchers
 
 app = Flask(__name__)
 app.secret_key = "some secret"
@@ -17,7 +17,7 @@ def index():
 
 @app.route("/api/")
 def api_greeting():
-    return render_template('layout.html', body="Welcome to the API")
+    return render_template('api.html', body="Welcome to the API")
 
 @app.route("/api/<call>", methods=['GET', 'POST'])
 def execute(call):
@@ -34,4 +34,4 @@ def execute(call):
     return redirect("/api/")
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=True)

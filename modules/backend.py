@@ -2,7 +2,7 @@
 # file: modules/backend.py
 
 from difflib import SequenceMatcher
-import io, redis
+import io, redis, datetime
 
 
 class Segment:
@@ -16,14 +16,26 @@ class Segment:
     def __init__(self, designation, content):
 
         self._designation = str(designation)
+
+        r_server.set(self.redis_key, datetime.datetime.utcnow())
         r_server.rpush(self.edits, 'nil')
         r_server.rpush(self.edits, content)
 
     @staticmethod
     def new(designation="default_seg", content="DEFAULT TEXT"):
         segment = Segment(designation, content)
-        print("new segment, redis hash", segment.redis_hash)
+        print("new segment, redis hash", segment.designation)
         return segment
+
+    @staticmethod
+    def open(designation, content):
+        redis_key = "segments:" + designation
+        if r_server.keys(redis_key):
+            segment = Segment(designation, content)
+            print("opening segment from key", segment.designation)
+            return segment
+        else:
+            return Segment.new(designation, content)
 
     # properties, listed alphabetically
     @property
@@ -44,14 +56,14 @@ class Segment:
 
     @property
     def edits(self):
-        return "segments:" + self._designation + ":edits"
+        return self.redis_key + ":edits"
 
     @property
     def edits_list(self):
         return r_server.lrange(self.edits, 0, -1)
 
     @property
-    def redis_hash(self):
+    def designation(self):
         return self._designation
 
     @property
@@ -61,6 +73,10 @@ class Segment:
             return prev_edit.decode()
         else:
             return None
+
+    @property
+    def redis_key(self):
+        return "segments:" + self.designation
 
     def add_edit(self, text):
         """
