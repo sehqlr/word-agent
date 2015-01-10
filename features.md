@@ -1,9 +1,9 @@
 # Word Agent Features & Roadmap
 
 My roadmap for the project is outlined below,
-but it can be changed depending upon Word Agent's userbase, if anyone.
+but it can be changed depending upon the userbase, if anyone.
 
-### Current Features for v0.2.x
+### Current Features for v0.2.2
 
 ##### Basic Editor Features
 
@@ -12,41 +12,51 @@ but it can be changed depending upon Word Agent's userbase, if anyone.
 * Undo/Redo
 * About Dialog
 * Help Dialog
+* Toolbar with all features
 * Keyboard shortcuts
-* Toolbar with basic features as buttons, with the option of 
-hiding it with F3. I call this "typewriter mode."
+* "Typewriter" mode (F3)
 
 There are currently is no formatting tools. See below.
 
-### Future Features, introduced in odd-numbered releases
+### Future Features
 
+##### Web App:
 
+This is the feature that I'm currently working on, using Flask.
+I plan on focusing on including as few microframeworks as possible.
 
 ##### Novel Project Management:
 
 * Segment centric
 
-Your large text file is kept in smaller "segments" with an internal
+Your large text file is kept in smaller "segments" with a
 database to keep track of where they belong in the scheme of the larger
-document. These files will not contain implicit formatting or metadata.
+document. These files will be non-formatted plaintext, for maximum
+compatibility across systems.
 
 * Project rendering and formatting
 
 Word Agent will "render" the larger document by concatenating
-the segments together when the full project is needed. Additionally,
-the document will be formatted at this stage, with either an internal
-module or external tools (like Markdown) at the user's option.
+the segments together when the file is needed. The web interface will
+feature an infinite scroll type interface, so the segmented files can be
+invisible to the user.
+
+Formatting for the document will be a different step, with either an internal
+module or external tools (like Markdown) at the user's option. I want to
+build it this way so that the composition of text is not distracted by the
+formatting of text.
 
 * Export to eReader formats
 
-Word Agent will export to eReader formats such as ePub and Mobi, as
+Word Agent will eventually export to eReader formats such as ePub and Mobi, as
 well as PDF and related page formats.
 
-* Character Database
+* Resource Database
 
-Special segments that contain a character description, and each segment
-of the project that includes a reference to that character. Another
-idea is to support photographs and images to the character's entry.
+A Resource is a special segments that contain metadata about characters,
+places, source materials, and other research. The idea is to be able to
+track where important resources are located in the segments
+of the project. Another idea is to support image.
 
 * Novel support, others later
 
@@ -54,12 +64,12 @@ To begin with, this program will have novels as the target
 project type. Support for academic papers, stage/screenplays, and other
 long works will be supported later.
 
-##### Version Control System
+##### Versioning
 
-This feature will take ideas from programs like Git and Mercurial
-for version control of the project. I will design a simple VCS module 
-for internal use, using difflib. Integration with external tools will
-come later.
+This feature ideas from programs like Git and Mercurial
+for version control of the project. The internal version of this module
+will simply store diffs of the segments as separate files. Integration with
+external tools shouldn't be too complex.
 
 ##### Cloud Collaboration
 
@@ -72,16 +82,12 @@ external web conferencing tools rather than build internally.
 
 ##### Possible other features
 
-* Distraction-free "Composition" mode
+* Expanded Typewriter mode
 
-Modeled after FocusWriter and PyRoom, this feature is a fullscreen
-"composition" mode that tries to keep the writing going. This feature
+Modeled after FocusWriter and PyRoom, this feature
 will have to get user imput on what works for them, and perhaps this
 will support user-built plugins. The composition tools may be things
 like timers, music, name generators, and other tools.
-
-This feature is implemented in part with "typewriter mode," but I will
-need to expand upon it with the above features.
 
 * Project Scheduler
 
@@ -100,14 +106,14 @@ visually.
 
 * Command Bar:
 
-This is an experimental feature, inspired by the text editor, vim.
+This would be experimental feature, inspired by the text editor, vim.
 I love the command environment, but I feel like there is a learning
-curve, and it's not easy to implement in a way that makes sense in 
+curve, and it's not easy to implement in a way that makes sense in
 a windowed environment. So, my idea is to create a Command Bar,
-a TextEntry widget that parsing a command input, and performs 
+a widget that parses a command input, and performs
 operations. For example, type "Save file as ~/Documents/foo.txt" and
 the program would set the filename as foo.txt with the path, and then
-perform the File/Save operation. 
+perform the File/Save operation.
 
-As I said, this is an experimental feature, and I have no idea how
-useful this would be to anyone but me.
+Probably what will happen is that I would just build out a VIM plugin
+to interface with the web app.

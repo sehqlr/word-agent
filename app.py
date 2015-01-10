@@ -28,8 +28,8 @@ def execute(call):
             return dispatch[call](request.form)
         else:
             flash("Command/method not recognized")
-    except:
-        flash("An error occured")
+    except Exception as e:
+        flash("An error occured: ", e.args)
 
     return redirect("/api/")
 
