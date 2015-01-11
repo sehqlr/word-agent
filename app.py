@@ -2,14 +2,14 @@
 from flask import Flask, request, render_template, flash, url_for, redirect
 import redis
 
-from modules.backend import Segment
-from modules.dispatch import dispatchers
+from modules.backend import dispatcher, Segment, r_server
 
 app = Flask(__name__)
 app.secret_key = "some secret"
 
-r_server = redis.Redis(db=10)
+print("Redis ping: ", r_server.ping())
 segment = Segment.new(designation="113", content="Hello World")
+
 
 @app.route("/")
 def index():
@@ -17,21 +17,23 @@ def index():
 
 @app.route("/api/")
 def api_greeting():
-    return render_template('api.html', body="Welcome to the API")
+    return render_template('api.html',
+                            body="Welcome to the API",
+                            dispatchers=dispatcher)
 
 @app.route("/api/<call>", methods=['GET', 'POST'])
 def execute(call):
     try:
-        if request.method == "GET" and call in dispatch:
+        if request.method == "GET" and call in dispatcher:
             return dispatch[call](request.args)
-        elif request.method == "POST" and call in dispatch:
+        elif request.method == "POST" and call in dispatcher:
             return dispatch[call](request.form)
         else:
             flash("Command/method not recognized")
     except Exception as e:
-        flash("An error occured: ", e.args)
+        flash("An error occured: ", str(e))
 
     return redirect("/api/")
 
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=True)
+    app.run(debug=True)

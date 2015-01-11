@@ -1,171 +1,21 @@
 #! /usr/bin/env python3
 
-import backend as wa
+from backend import Segment
 
-from collections import deque
-from difflib import SequenceMatcher
 from gi.repository import Gtk, Gdk
-import io
+from difflib import SequenceMatcher
 
 # TODO: keep welcome message updated!
 welcome_message = """
-Welcome to the Word Agent, the novel project management app!
+Welcome to the Word Agent, the (future) novel project management app!
 
 Keyboard shortcuts are listed in the Help message (Press F1).
 
 If you have any questions, concerns, or comments, please create an \
-issue on our GitHub page or email me with the details.
+issue on the GitHub page or email me with the details.
 """
 
 # CLASS DEFINITIONS
-
-class Segment:
-    """
-    Model for Word Agent. Encapsulates a segment
-    """
-    def __init__(self, filename, content):
-
-        # creates TextBuffer and Clipboard
-        self._buffer = Gtk.TextBuffer()
-        self._buffer.set_text(content)
-
-        self._clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
-        self._buffer.add_selection_clipboard(self._clipboard)
-
-        # instead of a file object, we keep/update the name only
-        self._filename = filename
-
-        # matcher limits number of autosave operations
-        # see text_comparison and autosave methods for more details
-        self._matcher = SequenceMatcher()
-
-        # edits is the double ended queue (deque) for autosave feature
-        self._edits = deque([None, content])
-
-        # connecting custom signal
-        self.sig_id = self._buffer.connect("changed", self.autosave)
-
-    @staticmethod
-    def new(filename="untitled", content=welcome_message):
-        """This includes default values for the Segment constructor"""
-        new = Segment(filename, content)
-        return new
-
-    # properties, listed alphabetically
-    @property
-    def base_edit(self):
-        return self._edits[0]
-
-    @property
-    def base_edit(self):
-        return self._edits[0]
-
-    @property
-    def buffer(self):
-        return self._buffer
-
-    @property
-    def clipboard(self):
-        return self._clipboard
-
-    @property
-    def curr_text(self):
-        return self._buffer.props.text
-
-    @curr_text.setter
-    def curr_text(self, value):
-        self._buffer.set_text(value, len(value))
-
-    @property
-    def edits(self):
-        return self._edits
-
-    @property
-    def filename(self):
-        return self._filename
-
-    @filename.setter
-    def filename(self, value):
-        self._filename = value
-
-    @property
-    def matcher(self):
-        return self._matcher
-
-    @property
-    def prev_edit(self):
-        return self._edits[-1]
-
-    # AUTOSAVE METHOD
-    def autosave(self, widget):
-        """
-        If enough changes have been made, add text to edits deque
-        """
-        # IDEA: percentage here could be changed in Settings.
-        if self.prev_edit is None:
-            self.edits.append("")
-        self.matcher.set_seqs(self.curr_text, self.prev_edit)
-        ratio = self.matcher.quick_ratio()
-        if ratio < 0.99:
-            print("Text autosaved")
-            self.edits.append(self.curr_text)
-
-        # clears out old edits using sentinel value
-        while self.base_edit is not None:
-            self.edits.popleft()
-
-    # UNDO/REDO METHODS
-    def undo(self):
-        """
-        Reverts TextBuffer to earlier state, from the edits deque
-        """
-        with self.buffer.handler_block(self.sig_id):
-            # because autosave is not the most current edit
-            if self.base_edit is None:
-                self.edits.append(self.curr_text)
-
-            # rotate the most recent addition to the back of the deque
-            self.edits.rotate(1)
-
-            # if prev_edit is None, we've rotated all the way around
-            if self.prev_edit:
-                self.curr_text = self.prev_edit
-            else:
-                print("Nothing to undo")
-
-    def redo(self):
-        """
-        Reverts TextBuffer to later state, if it still exists
-        """
-        with self.buffer.handler_block(self.sig_id):
-            # if base_edit is None, we've rotated all the way back
-            if self.base_edit:
-                self.edits.rotate(-1)
-                self.curr_text = self.prev_edit
-            else:
-                print("Nothing to redo")
-
-    # CUT/COPY/PASTE BUTTON METHODS
-    def cut(self):
-        """
-        Basic edit/cut function
-        """
-        if self.buffer.get_has_selection():
-            self.buffer.cut_clipboard(self.clipboard, True)
-
-    def copy(self):
-        """
-        Basic edit/copy function
-        """
-        if self.buffer.get_has_selection():
-            self.buffer.copy_clipboard(self.clipboard)
-
-    def paste(self):
-        """
-        Basic edit/paste function
-        """
-        self.buffer.paste_clipboard(self.clipboard, None, True)
-
 
 class EditorWindow(Gtk.Window):
     """
@@ -178,7 +28,7 @@ class EditorWindow(Gtk.Window):
         self.connect("destroy", Gtk.main_quit)
         self.set_default_size(600, 600)
 
-        # create the Box container 
+        # create the Box container
         self.box = Gtk.Box.new(1 , 3)
         self.add(self.box)
 
@@ -220,7 +70,6 @@ class EditorWindow(Gtk.Window):
         if response:
             dialog.destroy()
 
-    # TODO: Add file type filters to FileChoose dialogs
     def dialog_file_open(self):
         """
         Launch a File/Open dialog window
@@ -243,7 +92,7 @@ class EditorWindow(Gtk.Window):
         # add filters, set overwrite alert to yes
         dialog.add_filter(filter_text)
         dialog.add_filter(filter_all)
-        dialog.set_do_overwrite_confirmation(True)        
+        dialog.set_do_overwrite_confirmation(True)
 
         # get the response, return filename or None
         response = dialog.run()
@@ -277,7 +126,7 @@ class EditorWindow(Gtk.Window):
         # add filters, set overwrite alert to yes
         dialog.add_filter(filter_text)
         dialog.add_filter(filter_all)
-        dialog.set_do_overwrite_confirmation(True)        
+        dialog.set_do_overwrite_confirmation(True)
 
         # get the response, return filename or None
         response = dialog.run()
@@ -317,7 +166,7 @@ F11 = Toggle Fullscreen
 OTHER SHORTCUTS
 Control + Q = Quit Program
 """
-        # generate help message dialog    
+        # generate help message dialog
         dialog = Gtk.MessageDialog(message_format="Keyboard Shortcuts")
         dialog.set_property("message_type", Gtk.MessageType.INFO)
         dialog.format_secondary_text(shortcuts)
@@ -388,15 +237,21 @@ Control + Q = Quit Program
         self.toolbar.insert(button_about, 9)
         buttons["view_about"] = button_about
 
-
-class Application:
+class Controller:
     """
     Controller for Word Agent. Connects signals for windows
     """
     def __init__(self):
         self.seg = Segment.new()
+
+        self.buf = Gtk.TextBuffer()
+        self.clip = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+        self.buf.add_selection_clipboard(self.clip)
+
         self.win = EditorWindow()
-        self.win.view.set_buffer(self.seg.buffer)
+        self.win.view.set_buffer(self.buf)
+
+        self.matcher = SequenceMatcher()
 
         # boolean for File/Save(as) functions
         self.file_is_saved_as = False
@@ -423,6 +278,15 @@ class Application:
 
         self.win.connect("key-press-event", self.execute_operation)
 
+    def autosave(self):
+        if self.seg.prev_edit is None:
+            self.seg.add_edit("")
+        self.matcher.set_seq(self.seg.curr_edit, self.seg.prev_edit)
+        ratio = self.matcher.quick_ratio()
+        if ratio < 0.99:
+            print("Text autosaved")
+            self.seg.add_edit(self.buf.props.text)
+
     def connections(self):
         """Uses buttons and handlers dicts to connect widget signals"""
         for name, widget in self.win.buttons.items():
@@ -431,13 +295,17 @@ class Application:
 
     def change_buffer(self, filename=None):
         """Creates a new buffer, with defaults or content from disk"""
-        text = wa.read_from_file(filename)
+        if filename:
+            with open(filename, 'r') as textfile:
+                for line in textfile:
+                    text += line
+
         if text is "":
             self.seg = Segment.new()
-            self.win.view.set_buffer(self.seg.buffer)
+            self.win.view.set_buffer(self.buf)
         else:
             self.seg = Segment.new(filename=filename, content=text)
-            self.win.view.set_buffer(self.seg.buffer)
+            self.win.view.set_buffer(self.buf)
 
     def execute_operation(self, widget, event):
         keystroke = Gtk.accelerator_get_label(event.keyval, event.state)
@@ -492,7 +360,7 @@ class Application:
             self.seg.filename = self.win.dialog_file_save_as()
 
         if self.seg.filename:
-            wa.write_to_file(self.seg.filename, self.seg.curr_text)
+            backend.write_to_file(self.seg.filename, self.seg.curr_text)
             self.file_is_saved_as = True
 
     def do_file_save_as(self, widget):
@@ -519,19 +387,21 @@ class Application:
         """
         Implements basic edit/cut
         """
-        self.seg.cut()
+        if self.buf.get_has_selection():
+            self.buf.cut_clipboard(self.clip, True)
 
     def do_edit_copy(self, widget):
         """
         Implements basic edit/copy
         """
-        self.seg.copy()
+        if self.buf.get_has_selection():
+            self.buf.copy_clipboard(self.clip)
 
     def do_edit_paste(self, widget):
         """
         Implements basic edit/paste
         """
-        self.seg.paste()
+        self.buf.paste_clipboard(self.clip, None, True)
 
     # VIEW handlers
     def do_view_typewriter(self, widget):
@@ -571,7 +441,7 @@ def main():
     Gets things rolling
     """
     print("Starting Word Agent")
-    app = Application()
+    app = Controller()
     Gtk.main()
 
 if __name__ == '__main__':
