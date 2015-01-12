@@ -1,0 +1,4 @@
+(A) Create an API contract between app.py and frontends (Application and Controller)
+(B) Implement tests for frontends
+(C) Design UI better
+
