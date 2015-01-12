@@ -3,8 +3,8 @@ from backend import *
 """
 Testing module for word agent's backend
 """
-def test():
-    print("Begin backend self testing")
+def backend_test():
+    print("Begin backend testing")
     print()
     print('Connecting to redis server, using db 14... ')
     r_server = redis.Redis(db=14)

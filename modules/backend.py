@@ -1,47 +1,11 @@
 #! /usr/bin/env python3
 # file: modules/backend.py
 
-import io, redis, datetime
+import datetime, io, redis
 
-# Dispatch functions
-def file_new(**kwargs):
-    if kwargs is not None:
-        designation = kwargs.pop("designation")
-        content     = kwargs.pop("content")
-        return Segment.new(designation=designation, content=content)
-    else:
-        return Segment.new()
-
-def file_open(**kwargs):
-    if kwargs is not None:
-        designation = kwargs.pop("designation")
-        content     = kwargs.pop("content")
-        return Segment.open(designation=designation, content=content)
-    else:
-        return Segment.open()
-
-def file_save():
-    r_server.bgsave()
-
-def edit_undo():
-    segment.undo()
-
-def edit_redo():
-    segment.redo()
-
-def edit_add(text):
-    text = str(text)
-    segment.add_edit(text)
-
-# dict of dispatch funcs
-dispatcher = {
-    "file_new": file_new,
-    "file_open": file_open,
-    "file_save": file_save,
-    "edit_undo": edit_undo,
-    "edit_redo": edit_redo,
-    "edit_add": edit_add,
-    }
+# Constants
+SEGMENT_DEFAULT_DESIGNATION = "default_seg"
+SEGMENT_DEFAULT_CONTENT = "Welcome to Word Agent!"
 
 class Segment:
     """
@@ -156,6 +120,9 @@ class Segment:
 
 if __name__ == '__main__':
     import test
-    test.test()
+    test.backend_test()
 else:
     r_server = redis.Redis(db=10)
+    print("redis server ping: ", r_server.ping())
+    segment = Segment.new(designation=SEGMENT_DEFAULT_DESIGNATION,
+                          content=SEGMENT_DEFAULT_CONTENT)

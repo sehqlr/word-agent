@@ -444,6 +444,7 @@ def main():
     app = Controller()
     Gtk.main()
 
+#TODO: implement testing, have app run as frontend option
 if __name__ == '__main__':
     main()
 else:

@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 from flask import Flask, request, render_template, flash, url_for, redirect
-import redis
+import redis, sys
 
 from modules.backend import dispatcher, Segment, r_server
 
+if sys.argv[1] is "gtk":
+    from modules.frontends.gtk import Controller
+else:
+    from modules.frontends.web import Controller
+
 app = Flask(__name__)
 app.secret_key = "some secret"
-
-print("Redis ping: ", r_server.ping())
-segment = Segment.new(designation="113", content="Hello World")
-
 
 @app.route("/")
 def index():
