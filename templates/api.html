@@ -5,11 +5,6 @@
 {% block body %}
                         {{ super() }}
                         {{ body }}
-                        <ul>Possible dispatches
-                        {% for dispatch in dispatchers %}
-                            <li>{{ dispatch }}</li>
-                        {% endfor %}
-                        </ul>
                         <br/><br/><a href="/">Go back to the editor</a>
                         <br/><br/>
 {% endblock %}

@@ -4,8 +4,12 @@
 import datetime, io, redis
 
 # Constants
+
+REDIS_DEFAULT_DB = 10
 SEGMENT_DEFAULT_DESIGNATION = "default_seg"
 SEGMENT_DEFAULT_CONTENT = "Welcome to Word Agent!"
+
+# Class definitions
 
 class Segment:
     """
@@ -15,7 +19,9 @@ class Segment:
     TODO: add in versioning scheme w/ diffs
     TODO: add in lexical analysis wi/ NLTK
     """
-    def __init__(self, designation, content):
+    def __init__(self,
+                designation=SEGMENT_DEFAULT_DESIGNATION,
+                content=SEGMENT_DEFAULT_DESIGNATION):
 
         self._designation = str(designation)
 
@@ -23,11 +29,11 @@ class Segment:
         r_server.rpush(self.edits, 'nil')
         r_server.rpush(self.edits, content)
 
+        print("new segment, redis key", self.designation)
+
     @staticmethod
-    def new(designation="default_seg", content="DEFAULT TEXT"):
-        segment = Segment(designation, content)
-        print("new segment, redis hash", segment.designation)
-        return segment
+    def new(designation, content):
+        return Segment(designation, content)
 
     @staticmethod
     def open(designation, content):
@@ -80,6 +86,7 @@ class Segment:
     def redis_key(self):
         return "segments:" + self.designation
 
+    # Edit functions
     def add_edit(self, text):
         """
         Add text to edits, as long as there have been changes
@@ -122,7 +129,6 @@ if __name__ == '__main__':
     import test
     test.backend_test()
 else:
-    r_server = redis.Redis(db=10)
+    r_server = redis.Redis(db=REDIS_DEFAULT_DB)
     print("redis server ping: ", r_server.ping())
-    segment = Segment.new(designation=SEGMENT_DEFAULT_DESIGNATION,
-                          content=SEGMENT_DEFAULT_CONTENT)
+    segment = Segment()
