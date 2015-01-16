@@ -6,6 +6,7 @@
         </head>
         <body>
                 <nav>{% block nav %}
+                        <p>Current file: {{ filename }}</p>
                 {% endblock %}
                 </nav>
                 {% for message in get_flashed_messages() %}

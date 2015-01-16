@@ -19,9 +19,7 @@ class Segment:
     TODO: add in versioning scheme w/ diffs
     TODO: add in lexical analysis wi/ NLTK
     """
-    def __init__(self,
-                designation=SEGMENT_DEFAULT_DESIGNATION,
-                content=SEGMENT_DEFAULT_DESIGNATION):
+    def __init__(self, designation, content):
 
         self._designation = str(designation)
 
@@ -32,17 +30,20 @@ class Segment:
         print("new segment, redis key", self.designation)
 
     @staticmethod
-    def new(designation, content):
+    def new(designation=SEGMENT_DEFAULT_DESIGNATION,
+            content=SEGMENT_DEFAULT_DESIGNATION):
+
         return Segment(designation, content)
 
     @staticmethod
-    def open(designation, content):
+    def open(designation):
         redis_key = "segments:" + designation
         if r_server.keys(redis_key):
-            segment = Segment(designation, content)
-            print("opening segment from key", segment.designation)
-            return segment
+            print("opening segment from key", designation)
+            content = r_server.lindex(redis_key+"edits", -1)
+            return Segment(designation, content)
         else:
+            content = ""
             return Segment.new(designation, content)
 
     # properties, listed alphabetically
@@ -131,4 +132,4 @@ if __name__ == '__main__':
 else:
     r_server = redis.Redis(db=REDIS_DEFAULT_DB)
     print("redis server ping: ", r_server.ping())
-    segment = Segment()
+    segment = Segment.new()
