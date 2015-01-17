@@ -1,9 +1,15 @@
 {% extends "layout.html" %}
-{% block nav %}{{ super() }}{% endblock %}
+
+{% block nav %}
+{{ super() }}
+{% endblock %}
+
 {% block body %}
 {{ super() }}
-<form id="editor" method="post" action="api/add_edit">
-        <textarea id="text" name="text">{{ body }}</textarea>
-        <button id="editor_submit">Save Edit</button>
+<form id="editor" method="post" action="api">
+        <textarea id="text" name="text">{{ text }}</textarea>
+        <button id="add_edit_button" formaction="api/add_edit">Add Edit</button>
+        <button id="undo_button" formaction="api/undo">Undo</button>
+        <button id="redo_button" formaction="api/redo">Redo</button>
 </form>
 {% endblock %}

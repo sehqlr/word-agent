@@ -31,7 +31,7 @@ class Segment:
 
     @staticmethod
     def new(designation=SEGMENT_DEFAULT_DESIGNATION,
-            content=SEGMENT_DEFAULT_DESIGNATION):
+            content=SEGMENT_DEFAULT_CONTENT):
 
         return Segment(designation, content)
 
@@ -111,8 +111,9 @@ class Segment:
         if self.prev_edit:
             tmp = r_server.rpop(self.edits)
             r_server.lpush(self.edits, tmp)
+            return True
         else:
-            print("Nothing to undo")
+            return False
 
     def redo(self):
         """
@@ -122,8 +123,9 @@ class Segment:
         if self.base_edit:
             tmp = r_server.lpop(self.edits)
             r_server.rpush(self.edits, tmp)
+            return True
         else:
-            print("Nothing to redo")
+            return False
 
 
 if __name__ == '__main__':
@@ -132,4 +134,5 @@ if __name__ == '__main__':
 else:
     r_server = redis.Redis(db=REDIS_DEFAULT_DB)
     print("redis server ping: ", r_server.ping())
+    r_server.flushdb()
     segment = Segment.new()

@@ -1,23 +1,29 @@
 <!doctype html>
 <html>
-        <head>
-                <title>Word Agent: Dev edition</title>
-                <link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css')  }}">
-        </head>
-        <body>
-                <nav>{% block nav %}
-                        <p>Current file: {{ filename }}</p>
-                {% endblock %}
-                </nav>
-                {% for message in get_flashed_messages() %}
-                <div class="flash">{{ message }}</div>
-                {% endfor %}
-                <div class="content">{% block body %}
-                        <h1>Word Agent: Dev edition</h1>
-                        <h2>The app is currently under development.</h2>
-                        <a href="//github.com/sehqlr/word-agent">sehqlr/word-agent · GitHub</a>
-                        <br/><br/>
-                {% endblock %}
-                </div>
-        </body>
+<head>
+<title>Word Agent: Dev edition</title>
+<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css')  }}">
+</head>
+<body>
+{% block nav %}
+<nav>
+        <ul>
+                <li><a href="/">index</a></li>
+                <li><a href="/editor">editor</a></li>
+                <li><a href="/api">api</a></li>
+        </ul>
+</nav>
+{% endblock %}
+{% for message in get_flashed_messages() %}
+<div class="flash">{{ message }}</div>
+{% endfor %}
+<div class="content">{% block body %}
+        <h1>Word Agent: Dev edition</h1>
+        <h2>The app is currently under development.</h2>
+        <a href="//github.com/sehqlr/word-agent">sehqlr/word-agent · GitHub</a>
+        <br/><br/>
+        {% endblock %}
+</div>
+<footer><p>Current file: {{ filename }}</p></footer>
+</body>
 </html>

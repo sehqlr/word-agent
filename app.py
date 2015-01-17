@@ -5,57 +5,61 @@ import sys
 from backend import Segment, segment, r_server
 
 app = Flask(__name__)
+app.secret_key = "something secret"
 app.debug = True
 
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 def index():
     return render_template('index.html',
                             filename=segment.designation,
                             body="Welcome to the index page")
 
-@app.route("/editor")
+@app.route("/editor", methods=["GET", "POST"])
 def editor():
     return render_template('editor.html',
                             filename=segment.designation,
                             text=segment.curr_edit)
 
-@app.route("/api")
+@app.route("/api", methods=["GET", "POST"])
 def api():
     return render_template('api.html',
                             body="Welcome to the API",
-                            dispatchers=dispatcher)
+                            filename=segment.designation)
 
-@app.route("/api/open")
+@app.route("/api/open", methods=["GET"])
 def open():
-    if request.method == "GET":
+    if request.args.get("designation"):
         designation = request.args.get("designation")
-        return Segment.open(designation=designation)
+        segment = Segment.open(designation=designation)
     else:
-        return Segment.new()
-    flash("opened")
+        segment = Segment.new()
+    flash("opened segment ", segment.designation)
+    return redirect(url_for('editor'))
 
-@app.route("/api/save")
+@app.route("/api/save", methods=["POST"])
 def save():
     r_server.bgsave()
     flash("saved")
+    return redirect(url_for('editor'))
 
-@app.route("/api/undo")
+@app.route("/api/undo", methods=["POST"])
 def undo():
-    segment.undo()
-    flash("undid")
+    result = segment.undo()
+    flash("undid: " + str(result))
+    return redirect(url_for('editor'))
 
-@app.route("/api/redo")
+@app.route("/api/redo", methods=["POST"])
 def redo():
-    segment.redo()
-    flash("redid")
+    result = segment.redo()
+    flash("redid: " + str(result))
+    return redirect(url_for('editor'))
 
-@app.route("/api/add_edit")
+@app.route("/api/add_edit", methods=["POST"])
 def add_edit():
-    if request.method == "POST":
-        text = request.form.get("text")
-        segment.add_edit(text)
-        flash("added the edit")
-
+    text = request.form.get("text")
+    result = segment.add_edit(text)
+    flash("added the edit: " + str(result))
+    return redirect(url_for('editor'))
 
 if __name__ == "__main__":
     app.run()
