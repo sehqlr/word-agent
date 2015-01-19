@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from flask import Flask, request, render_template, flash, url_for, redirect
+from flask import Flask, request, render_template, flash, url_for, redirect, g
 import sys
 
 from backend import Segment, segment, r_server
@@ -8,23 +8,24 @@ app = Flask(__name__)
 app.secret_key = "something secret"
 app.debug = True
 
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     return render_template('index.html',
-                            filename=segment.designation,
+                            filename=r_server.get("curr_seg"),
                             body="Welcome to the index page")
 
 @app.route("/editor", methods=["GET", "POST"])
 def editor():
     return render_template('editor.html',
-                            filename=segment.designation,
+                            filename=r_server.get("curr_seg"),
                             text=segment.curr_edit)
 
 @app.route("/api", methods=["GET", "POST"])
 def api():
     return render_template('api.html',
                             body="Welcome to the API",
-                            filename=segment.designation)
+                            filename=r_server.get("curr_seg"))
 
 @app.route("/api/open", methods=["GET"])
 def open():
@@ -33,7 +34,8 @@ def open():
         segment = Segment.open(designation=designation)
     else:
         segment = Segment.new()
-    flash("opened segment ", segment.designation)
+    flash("opened segment " + str(segment.designation))
+    r_server.set("curr_seg", segment.designation)
     return redirect(url_for('editor'))
 
 @app.route("/api/save", methods=["POST"])

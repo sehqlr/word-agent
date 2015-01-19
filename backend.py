@@ -6,7 +6,7 @@ import datetime, io, redis
 # Constants
 
 REDIS_DEFAULT_DB = 10
-SEGMENT_DEFAULT_DESIGNATION = "default_seg"
+SEGMENT_DEFAULT_FILENAME = "default_seg"
 SEGMENT_DEFAULT_CONTENT = "Welcome to Word Agent!"
 
 # Class definitions
@@ -19,32 +19,32 @@ class Segment:
     TODO: add in versioning scheme w/ diffs
     TODO: add in lexical analysis wi/ NLTK
     """
-    def __init__(self, designation, content):
+    def __init__(self, filename, content):
 
-        self._designation = str(designation)
+        self._filename = str(filename)
 
         r_server.set(self.redis_key, datetime.datetime.utcnow())
         r_server.rpush(self.edits, 'nil')
         r_server.rpush(self.edits, content)
 
-        print("new segment, redis key", self.designation)
+        print("new segment, redis key", self.filename)
 
     @staticmethod
-    def new(designation=SEGMENT_DEFAULT_DESIGNATION,
+    def new(filename=SEGMENT_DEFAULT_FILENAME,
             content=SEGMENT_DEFAULT_CONTENT):
 
-        return Segment(designation, content)
+        return Segment(filename, content)
 
     @staticmethod
-    def open(designation):
-        redis_key = "segments:" + designation
+    def open(filename):
+        redis_key = "segment:" + filename
         if r_server.keys(redis_key):
-            print("opening segment from key", designation)
+            print("opening segment from key", filename)
             content = r_server.lindex(redis_key+"edits", -1)
-            return Segment(designation, content)
+            return Segment(filename, content)
         else:
             content = ""
-            return Segment.new(designation, content)
+            return Segment.new(filename, content)
 
     # properties, listed alphabetically
     @property
@@ -72,8 +72,8 @@ class Segment:
         return r_server.lrange(self.edits, 0, -1)
 
     @property
-    def designation(self):
-        return self._designation
+    def filename(self):
+        return self._filename
 
     @property
     def prev_edit(self):
@@ -85,7 +85,7 @@ class Segment:
 
     @property
     def redis_key(self):
-        return "segments:" + self.designation
+        return "segment:" + self.filename
 
     # Edit functions
     def add_edit(self, text):
@@ -136,3 +136,4 @@ else:
     print("redis server ping: ", r_server.ping())
     r_server.flushdb()
     segment = Segment.new()
+    r_server.set("curr_seg", segment.filename)
