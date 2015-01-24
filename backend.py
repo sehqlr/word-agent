@@ -33,8 +33,6 @@ class Segment:
         self.r_server.rpush(self.edits_key, 'nil')
         self.r_server.rpush(self.edits_key, content)
 
-        print("new segment, id: ", self.file_id)
-
     @staticmethod
     def new(file_id=SEGMENT_DEFAULT_FILE_ID,
             filename=SEGMENT_DEFAULT_FILENAME,
@@ -150,5 +148,4 @@ if __name__ == '__main__':
     test.backend_test()
 else:
     segment = Segment.new()
-    print("redis server ping: ", segment.r_server.ping())
     segment.r_server.flushdb()
