@@ -2,7 +2,7 @@
 import redis, unittest
 from backend import Segment
 from app import app
-from app import segment as app_seg
+
 TEST_EDITS_LIST = ["first", "second", "third", "fourth", "fifth"]
 
 class SegmentEditTestCase(unittest.TestCase):
@@ -67,9 +67,14 @@ class WebTestCase(unittest.TestCase):
     """Test case for Flask frontend"""
     def setUp(self):
         self.app = app.test_client()
+        self.segment = Segment.new()
 
     def tearDown(self):
-        pass
+        Segment.r_server.flushdb()
+
+    def test_edits_list(self):
+        edits_list = self.segment.edits
+        self.assertGreater(len(edits_list), 0)
 
     def test_index(self):
         rv = self.app.get("/")
@@ -78,7 +83,7 @@ class WebTestCase(unittest.TestCase):
 
     def test_editor(self):
         rv = self.app.get("/editor")
-        b = app_seg.curr_edit.encode('utf-8')
+        b = self.segment.curr_edit.encode('utf-8')
         self.assertIn(b, rv.data)
 
     def test_api(self):
