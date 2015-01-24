@@ -47,14 +47,14 @@ class Segment:
 
     @staticmethod
     def open(file_id):
-        file_ids = self.r_server.sort(REDIS_FILE_SET, desc=True)
+        file_ids = Segment.r_server.sort(REDIS_FILE_SET, desc=True)
         if file_id in file_ids:
             print("opening segment id", file_id)
             filename = self.r_server.get("file:" + file_id)
             content = self.r_server.lindex(self.edits_key, -1)
             return Segment(file_id, filename, content)
         else:
-            file_id = file_ids[0] + 1
+            file_id = int(file_ids[0]) + 1
             filename = None
             content = ""
             return Segment.new(filename, content)

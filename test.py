@@ -82,11 +82,10 @@ class SegmentRedisTestCase(unittest.TestCase):
         self.assertEqual(self.segment.filename, "default_seg")
         self.assertEqual(self.segment.redis_key, "file:1")
 
-    def test_new(self):
-        pass
-
     def test_open(self):
-        pass
+        Segment.r_server.sadd("files", 2)
+        segment2 = Segment.open(2)
+        self.assertIsInstance(segment2, Segment)
 
     def test_current(self):
         self.assertEqual(Segment.current(), self.segment.file_id)
