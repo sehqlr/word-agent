@@ -1,0 +1,5 @@
+files => linked list of file ids; head = current
+
+file:[id] => filename
+
+edits:[id] => linked list of edits, capped at EDITS_CAP

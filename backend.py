@@ -1,11 +1,13 @@
 #! /usr/bin/env python3
 # file: modules/backend.py
 
-import datetime, io, redis
+import io, redis
 
 # Constants
 
 REDIS_DEFAULT_DB = 10
+REDIS_FILE_SET = "files"
+SEGMENT_DEFAULT_FILE_ID = 1
 SEGMENT_DEFAULT_FILENAME = "default_seg"
 SEGMENT_DEFAULT_CONTENT = "Welcome to Word Agent!"
 
@@ -13,79 +15,94 @@ SEGMENT_DEFAULT_CONTENT = "Welcome to Word Agent!"
 
 class Segment:
     """
-    Encapsulates a segment, including the text, edit history,
-    and lexical analysis.
+    Encapsulates a segment, including the text, edit history, and filepath
 
+    TODO: finish data schema and file formats/path
     TODO: add in versioning scheme w/ diffs
-    TODO: add in lexical analysis wi/ NLTK
     """
-    def __init__(self, filename, content):
 
-        self._filename = str(filename)
+    # redis server access point for all segments
+    r_server = redis.Redis(db=REDIS_DEFAULT_DB)
 
-        r_server.set(self.redis_key, datetime.datetime.utcnow())
-        r_server.rpush(self.edits, 'nil')
-        r_server.rpush(self.edits, content)
+    def __init__(self, file_id, filename, content):
 
-        print("new segment, redis key", self.filename)
+        self._file_id = file_id
+
+        self.r_server.sadd(REDIS_FILE_SET, self.file_id)
+        self.r_server.set(self.redis_key, filename)
+        self.r_server.rpush(self.edits_key, 'nil')
+        self.r_server.rpush(self.edits_key, content)
+
+        print("new segment, id: ", self.file_id)
 
     @staticmethod
-    def new(filename=SEGMENT_DEFAULT_FILENAME,
+    def new(file_id=SEGMENT_DEFAULT_FILE_ID,
+            filename=SEGMENT_DEFAULT_FILENAME,
             content=SEGMENT_DEFAULT_CONTENT):
 
-        return Segment(filename, content)
+        return Segment(file_id, filename, content)
 
     @staticmethod
-    def open(filename):
-        redis_key = "segment:" + filename
-        if r_server.keys(redis_key):
-            print("opening segment from key", filename)
-            content = r_server.lindex(redis_key+"edits", -1)
-            return Segment(filename, content)
+    def open(file_id):
+        file_ids = self.r_server.sort(REDIS_FILE_SET, desc=True)
+        if file_id in file_ids:
+            print("opening segment id", file_id)
+            filename = self.r_server.get("file:" + file_id)
+            content = self.r_server.lindex(self.edits_key, -1)
+            return Segment(file_id, filename, content)
         else:
+            file_id = file_ids[0] + 1
+            filename = None
             content = ""
             return Segment.new(filename, content)
 
     # properties, listed alphabetically
     @property
     def base_edit(self):
-        base_edit = self.edits_list[0]
-        if base_edit != b'nil':
-            return base_edit.decode()
+        base_edit = self.edits[0]
+        if base_edit != 'nil':
+            return base_edit
         else:
             return None
 
     @property
     def curr_edit(self):
-        curr_edit = self.edits_list[-1]
-        if curr_edit != b'nil':
-            return curr_edit.decode()
+        curr_edit = self.edits[-1]
+        if curr_edit != 'nil':
+            return curr_edit
         else:
             return "The edit queue is empty"
 
     @property
     def edits(self):
-        return self.redis_key + ":edits"
+        edits = self.r_server.lrange(self.edits_key, 0, -1)
+        edits = [edit.decode() for edit in edits]
+        return edits
 
     @property
-    def edits_list(self):
-        return r_server.lrange(self.edits, 0, -1)
+    def edits_key(self):
+        return "edits:" + self.file_id
+
+    @property
+    def file_id(self):
+        return str(self._file_id)
 
     @property
     def filename(self):
-        return self._filename
+        filename = self.r_server.get(self.redis_key)
+        return filename.decode()
 
     @property
     def prev_edit(self):
-        prev_edit = self.edits_list[-2]
-        if prev_edit != b'nil':
-            return prev_edit.decode()
+        prev_edit = self.edits[-2]
+        if prev_edit != 'nil':
+            return prev_edit
         else:
             return None
 
     @property
     def redis_key(self):
-        return "segment:" + self.filename
+        return "file:" + self.file_id
 
     # Edit functions
     def add_edit(self, text):
@@ -95,11 +112,11 @@ class Segment:
         if (text == self.curr_edit):
             return False
 
-        r_server.rpush(self.edits, text)
+        self.r_server.rpush(self.edits_key, text)
 
         # clears out old edits using sentinel value
         while self.base_edit is not None:
-            r_server.lpop(self.edits)
+            self.r_server.lpop(self.edits_key)
 
         return True
 
@@ -109,8 +126,8 @@ class Segment:
         """
         # if prev_edit is None, we've rotated to oldest change
         if self.prev_edit:
-            tmp = r_server.rpop(self.edits)
-            r_server.lpush(self.edits, tmp)
+            tmp = self.r_server.rpop(self.edits_key)
+            self.r_server.lpush(self.edits_key, tmp)
             return True
         else:
             return False
@@ -121,8 +138,8 @@ class Segment:
         """
         # if base_edit is None, we've rotated all the way back
         if self.base_edit:
-            tmp = r_server.lpop(self.edits)
-            r_server.rpush(self.edits, tmp)
+            tmp = self.r_server.lpop(self.edits_key)
+            self.r_server.rpush(self.edits_key, tmp)
             return True
         else:
             return False
@@ -132,8 +149,6 @@ if __name__ == '__main__':
     import test
     test.backend_test()
 else:
-    r_server = redis.Redis(db=REDIS_DEFAULT_DB)
-    print("redis server ping: ", r_server.ping())
-    r_server.flushdb()
     segment = Segment.new()
-    r_server.set("curr_seg", segment.filename)
+    print("redis server ping: ", segment.r_server.ping())
+    segment.r_server.flushdb()

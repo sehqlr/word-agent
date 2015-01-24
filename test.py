@@ -1,69 +1,56 @@
-import redis
+import redis, unittest
 from backend import *
 """
 Testing module for word agent's backend
 """
-def backend_test():
-    print("Begin backend testing")
-    print()
-    print('Connecting to redis server, using db 14... ')
-    r_server = redis.Redis(db=14)
 
-    if (r_server.ping()):
-        print("server ping sucessful")
-    else:
-        print("server ping failed")
+TEST_EDITS_LIST = ["first", "second", "third", "fourth", "fifth"]
 
-    print("flushing db 14")
-    r_server.flushdb()
-    print()
+class SegmentEditTestCase(unittest.TestCase):
+    """Test editing methods for Segments"""
 
-    print("init default_segment")
-    default_seg = Segment.new()
-    print("edits list after init: ", default_seg.edits_list)
-    print("edits list length: ", len(default_seg.edits_list))
-    print()
+    def setUp(self):
+        self.seg = Segment.new(content="zeroth")
+        for edit in TEST_EDITS_LIST:
+            self.seg.add_edit(edit)
+        self.test_edits = self.seg.edits
 
-    words = ["first", "second", "third", "fourth"]
-    test_edits = []
-    for word in words:
-        test_edits.append(word)
-    print("test edits list: ", test_edits)
-    print("test edits length: ", len(test_edits))
-    print()
+    def test_properties(self):
+        self.assertEqual(self.seg.base_edit, None)
+        self.assertEqual(self.seg.prev_edit, 'fourth')
+        self.assertEqual(self.seg.curr_edit, 'fifth')
 
-    for edit in test_edits:
-        default_seg.add_edit(edit)
+    def test_undo(self):
+        test_case = self.test_edits[:-1]
+        test_case.append("nil")
+        for i in range(0, len(self.test_edits)):
+            self.seg.undo()
+            #TODO: add in asserts for base, prev, and curr edits
+        self.assertEqual(self.seg.edits, self.test_edits)
+        self.assertNotEqual(self.seg.edits, test_case)
+        #TODO: add in asserts that aren't dumb
 
-    print("edits list after adding test edits: ", default_seg.edits_list)
-    print("edits list length: ", len(default_seg.edits_list))
-    print()
+    def test_redo(self):
+        test_case = self.test_edits[1:]
+        test_case.append("nil")
+        for i in range(0, len(self.test_edits)):
+            self.seg.redo()
+        self.assertEqual(self.seg.edits, self.test_edits)
+        self.assertNotEqual(self.seg.edits, test_case)
+        #TODO: add in asserts that aren't dumb
 
-    print("testing undo action...")
-    for i in range(0,(len(words)-1)):
-        default_seg.undo()
-        print("Undo #", i, ": ", default_seg.edits_list)
-        print("edits list length: ", len(default_seg.edits_list))
-        print("base_edit: ", default_seg.base_edit)
-        print("prev_edit: ", default_seg.prev_edit)
-        print("curr_edit: ", default_seg.curr_edit)
-        print()
+    def test_edit_truncation(self):
+        mid = len(self.test_edits)//2
+        test_case = self.test_edits[mid:] + self.test_edits[:mid]
+        for i in range(0, mid):
+            self.seg.redo()
+        self.assertEqual(self.seg.edits, self.test_edits)
+        self.assertNotEqual(self.seg.edits, test_case)
+        #TODO: add in asserts that aren't dumb
 
-    print("testing redo action")
-    for i in range(0,(len(words)-3)):
-        default_seg.redo()
-        print("Redo #", i, ": ", default_seg.edits_list)
-        print("edits list length: ", len(default_seg.edits_list))
-        print("base_edit: ", default_seg.base_edit)
-        print("prev_edit: ", default_seg.prev_edit)
-        print("curr_edit: ", default_seg.curr_edit)
-        print()
+    def tearDown(self):
+        self.seg.r_server.flushdb()
 
-    print("add edit, should truncate old edits from list")
-    default_seg.add_edit("fifth")
-    print("edits list after adding new edit: ", default_seg.edits_list)
-    print("edits list length: ", len(default_seg.edits_list))
-    print("base_edit: ", default_seg.base_edit)
-    print("prev_edit: ", default_seg.prev_edit)
-    print("curr_edit: ", default_seg.curr_edit)
-    print()
+if __name__ == "__main__":
+    unittest.main()
+
