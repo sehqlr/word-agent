@@ -5,7 +5,7 @@ from app import app
 
 TEST_EDITS_LIST = ["first", "second", "third", "fourth", "fifth"]
 
-class SegmentEditTestCase(unittest.TestCase):
+class SegmentEditingTestCase(unittest.TestCase):
     """Test editing methods for Segments"""
 
     def setUp(self):
@@ -60,8 +60,36 @@ class SegmentEditTestCase(unittest.TestCase):
         self.seg.add_edit("sixth")
 
         self.assertEqual(self.seg.edits, case)
-        #TODO: add in asserts that aren't dumb
 
+class SegmentRedisTestCase(unittest.TestCase):
+    """Tests Segment redis methods"""
+    def setUp(self):
+        self.segment = Segment.new()
+
+    def tearDown(self):
+        Segment.r_server.flushdb()
+
+    def test_redis_ping(self):
+        rv = Segment.r_server.ping()
+        self.assertTrue(rv)
+
+    def test_save(self):
+        pass
+
+    def test_properties(self):
+        self.assertEqual(self.segment.edits_key, "edits:1")
+        self.assertEqual(self.segment.file_id, "1")
+        self.assertEqual(self.segment.filename, "default_seg")
+        self.assertEqual(self.segment.redis_key, "file:1")
+
+    def test_new(self):
+        pass
+
+    def test_open(self):
+        pass
+
+    def test_current(self):
+        self.assertEqual(Segment.current(), self.segment.file_id)
 
 class WebTestCase(unittest.TestCase):
     """Test case for Flask frontend"""
@@ -89,6 +117,13 @@ class WebTestCase(unittest.TestCase):
     def test_api(self):
         rv = self.app.get("/api")
         b = b'Welcome to the API'
+        self.assertIn(b, rv.data)
+
+    def test_add_edit(self):
+        rv = self.app.post("/api/add_edit",
+                data=dict(text="new edit"),
+                follow_redirects=True)
+        b = self.segment.curr_edit.encode("utf-8")
         self.assertIn(b, rv.data)
 
 if __name__ == "__main__":
