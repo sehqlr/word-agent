@@ -1,9 +1,8 @@
+#!/usr/bin/env python3
 import redis, unittest
-from backend import *
-"""
-Testing module for word agent's backend
-"""
-
+from backend import Segment
+from app import app
+from app import segment as app_seg
 TEST_EDITS_LIST = ["first", "second", "third", "fourth", "fifth"]
 
 class SegmentEditTestCase(unittest.TestCase):
@@ -15,6 +14,9 @@ class SegmentEditTestCase(unittest.TestCase):
             self.seg.add_edit(edit)
         self.median = (len(self.seg.edits) // 2) + 1
         self.mix = self.seg.edits[self.median:] + self.seg.edits[:self.median]
+
+    def tearDown(self):
+        self.seg.r_server.flushdb()
 
     def test_properties(self):
         """Test edit-related read-only properties"""
@@ -60,9 +62,29 @@ class SegmentEditTestCase(unittest.TestCase):
         self.assertEqual(self.seg.edits, case)
         #TODO: add in asserts that aren't dumb
 
+
+class WebTestCase(unittest.TestCase):
+    """Test case for Flask frontend"""
+    def setUp(self):
+        self.app = app.test_client()
+
     def tearDown(self):
-        self.seg.r_server.flushdb()
+        pass
+
+    def test_index(self):
+        rv = self.app.get("/")
+        b = b'Welcome to the index page'
+        self.assertIn(b, rv.data)
+
+    def test_editor(self):
+        rv = self.app.get("/editor")
+        b = app_seg.curr_edit.encode('utf-8')
+        self.assertIn(b, rv.data)
+
+    def test_api(self):
+        rv = self.app.get("/api")
+        b = b'Welcome to the API'
+        self.assertIn(b, rv.data)
 
 if __name__ == "__main__":
     unittest.main()
-

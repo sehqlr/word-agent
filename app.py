@@ -1,46 +1,46 @@
 #!/usr/bin/env python3
-from flask import Flask, request, render_template, flash, url_for, redirect, g
+from flask import Flask, request, render_template, flash, url_for, redirect
 import sys
 
-from backend import Segment, segment, r_server
+from backend import Segment
 
 app = Flask(__name__)
 app.secret_key = "something secret"
-app.debug = True
 
+Segment.r_server.flushdb()
+segment = Segment.new()
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     return render_template('index.html',
-                            filename=r_server.get("curr_seg"),
+                            filename=Segment.r_server.get("curr_seg"),
                             body="Welcome to the index page")
 
 @app.route("/editor", methods=["GET", "POST"])
 def editor():
     return render_template('editor.html',
-                            filename=r_server.get("curr_seg"),
+                            filename=Segment.r_server.get("curr_seg"),
                             text=segment.curr_edit)
 
 @app.route("/api", methods=["GET", "POST"])
 def api():
     return render_template('api.html',
                             body="Welcome to the API",
-                            filename=r_server.get("curr_seg"))
+                            filename=Segment.r_server.get("curr_seg"))
 
 @app.route("/api/open", methods=["GET"])
 def open():
-    if request.args.get("designation"):
-        designation = request.args.get("designation")
-        segment = Segment.open(designation=designation)
+    if request.args.get("file_id"):
+        file_id = request.args.get("file_id")
+        segment = Segment.open(file_id=file_id)
     else:
         segment = Segment.new()
-    flash("opened segment " + str(segment.designation))
-    r_server.set("curr_seg", segment.designation)
+    flash("opened file " + str(Segment.current.file_id))
     return redirect(url_for('editor'))
 
 @app.route("/api/save", methods=["POST"])
 def save():
-    r_server.bgsave()
+    Segment.r_server.bgsave()
     flash("saved")
     return redirect(url_for('editor'))
 
@@ -64,6 +64,5 @@ def add_edit():
     return redirect(url_for('editor'))
 
 if __name__ == "__main__":
+    app.debug = True
     app.run()
-else:
-    print("testing for this module has not been implemented yet")

@@ -1,5 +1,4 @@
-files => linked list of file ids; head = current
-
-file:[id] => filename
-
+current => file_id of most recently init'd segment
 edits:[id] => linked list of edits, capped at EDITS_CAP
+file:[id] => filename
+files => set of file_ids

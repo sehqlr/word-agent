@@ -32,6 +32,11 @@ class Segment:
         self.r_server.set(self.redis_key, filename)
         self.r_server.rpush(self.edits_key, 'nil')
         self.r_server.rpush(self.edits_key, content)
+        self.r_server.set("current", self.file_id)
+
+    @staticmethod
+    def current():
+        return Segment.r_server.get("current").decode()
 
     @staticmethod
     def new(file_id=SEGMENT_DEFAULT_FILE_ID,
@@ -141,11 +146,3 @@ class Segment:
             return True
         else:
             return False
-
-
-if __name__ == '__main__':
-    import test
-    test.backend_test()
-else:
-    segment = Segment.new()
-    segment.r_server.flushdb()
