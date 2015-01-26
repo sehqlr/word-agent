@@ -7,35 +7,37 @@ from backend import Segment
 app = Flask(__name__)
 app.secret_key = "something secret"
 
-Segment.r_server.flushdb()
-segment = Segment.new()
+
+def get_segment():
+    file_id = Segment.current()
+    return Segment.open(file_id)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     return render_template('index.html',
-                            filename=Segment.r_server.get("curr_seg"),
+                            filename=Segment.current(),
                             body="Welcome to the index page")
 
 @app.route("/editor", methods=["GET", "POST"])
 def editor():
     return render_template('editor.html',
-                            filename=Segment.r_server.get("curr_seg"),
+                            filename=Segment.current(),
                             text=segment.curr_edit)
 
 @app.route("/api", methods=["GET", "POST"])
 def api():
     return render_template('api.html',
                             body="Welcome to the API",
-                            filename=Segment.r_server.get("curr_seg"))
+                            filename=Segment.current())
 
 @app.route("/api/open", methods=["GET"])
 def open():
-    if request.args.get("file_id"):
-        file_id = request.args.get("file_id")
+    file_id = request.args.get("file_id")
+    if file_id:
         segment = Segment.open(file_id=file_id)
     else:
-        segment = Segment.new()
-    flash("opened file " + str(Segment.current.file_id))
+        segment = Segment.open(file_id)
+    flash("opened file " + Segment.current())
     return redirect(url_for('editor'))
 
 @app.route("/api/save", methods=["POST"])
@@ -64,5 +66,7 @@ def add_edit():
     return redirect(url_for('editor'))
 
 if __name__ == "__main__":
+    Segment.r_server.flushdb()
+    segment = get_segment()
     app.debug = True
     app.run()

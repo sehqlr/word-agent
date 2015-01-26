@@ -6,10 +6,8 @@ import io, redis
 # Constants
 
 REDIS_DEFAULT_DB = 10
-REDIS_FILE_SET = "files"
-SEGMENT_DEFAULT_FILE_ID = 1
-SEGMENT_DEFAULT_FILENAME = "default_seg"
-SEGMENT_DEFAULT_CONTENT = "Welcome to Word Agent!"
+SEGMENT_DEFAULT_FILENAME = "untitled"
+SEGMENT_DEFAULT_CONTENT = ""
 
 # Class definitions
 
@@ -24,40 +22,59 @@ class Segment:
     # redis server access point for all segments
     r_server = redis.Redis(db=REDIS_DEFAULT_DB)
 
-    def __init__(self, file_id, filename, content):
+    def __init__(self, file_id):
 
         self._file_id = file_id
-
-        self.r_server.sadd(REDIS_FILE_SET, self.file_id)
-        self.r_server.set(self.redis_key, filename)
         self.r_server.rpush(self.edits_key, 'nil')
-        self.r_server.rpush(self.edits_key, content)
         self.r_server.set("current", self.file_id)
 
     @staticmethod
-    def current():
-        return Segment.r_server.get("current").decode()
+    def count():
+        count = Segment.r_server.get("count")
+        if count:
+            return count.decode()
+        else:
+            return "0"
 
     @staticmethod
-    def new(file_id=SEGMENT_DEFAULT_FILE_ID,
-            filename=SEGMENT_DEFAULT_FILENAME,
+    def current():
+        current = Segment.r_server.get("current")
+        if current:
+            return current.decode()
+        else:
+            return Segment.count()
+
+    @staticmethod
+    def new(filename=SEGMENT_DEFAULT_FILENAME,
             content=SEGMENT_DEFAULT_CONTENT):
 
-        return Segment(file_id, filename, content)
+        Segment.r_server.incr("count")
+        file_id = Segment.count()
+        new_seg = Segment(file_id)
+        Segment.r_server.set(new_seg.redis_key, filename)
+        Segment.r_server.rpush(new_seg.edits_key, content)
+        return new_seg
 
     @staticmethod
     def open(file_id):
-        file_ids = Segment.r_server.sort(REDIS_FILE_SET, desc=True)
-        if file_id in file_ids:
-            print("opening segment id", file_id)
-            filename = self.r_server.get("file:" + file_id)
-            content = self.r_server.lindex(self.edits_key, -1)
-            return Segment(file_id, filename, content)
+        max_file_id = Segment.count()
+        if file_id <= max_file_id:
+            filename = Segment.r_server.get("file:" + file_id)
+            content = Segment.r_server.lindex("edits:" + file_id, -1)
+            return Segment.new(filename=filename, content=content)
         else:
-            file_id = int(file_ids[0]) + 1
-            filename = None
+            filename = SEGMENT_DEFAULT_FILENAME
             content = ""
-            return Segment.new(filename, content)
+            return Segment.new(filename=filename,content=content)
+
+    @staticmethod
+    def save(file_id):
+        file_id = str(file_id)
+        filename = Segment.r_server.get("file:"+file_id)
+        content = Segment.r_server.lindex("edits:"+file_id, -1)
+        with open(filename, "w") as file:
+            file.write(content.decode())
+        return filename.decode()
 
     # properties, listed alphabetically
     @property
@@ -79,8 +96,8 @@ class Segment:
     @property
     def edits(self):
         edits = self.r_server.lrange(self.edits_key, 0, -1)
-        edits = [edit.decode() for edit in edits]
-        return edits
+        decoded = [edit.decode() for edit in edits]
+        return decoded
 
     @property
     def edits_key(self):
