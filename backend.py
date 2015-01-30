@@ -1,13 +1,6 @@
 #! /usr/bin/env python3
-# file: modules/backend.py
 
 import io, redis
-
-# Constants
-
-REDIS_DEFAULT_DB = 10
-SEGMENT_DEFAULT_FILENAME = "untitled"
-SEGMENT_DEFAULT_CONTENT = ""
 
 # Class definitions
 
@@ -19,68 +12,86 @@ class Segment:
     TODO: add in versioning scheme w/ diffs
     """
 
+    REDIS_KEY = "segments"
+    FILEPATH_KEY = "filepath"
+    CURRENT_KEY = "current"
+    EDITS_KEY = "edits"
+    FILEPATH = "full.txt"
+    SEG_ID_KEY = "file"
+    REDIS_DB = 10
+    REDIS_NONE = 'nil'
+
     # redis server access point for all segments
-    r_server = redis.Redis(db=REDIS_DEFAULT_DB)
+    r_server = redis.Redis(db=REDIS_DB)
 
-    def __init__(self, file_id):
+    def __init__(self, seg_id):
 
-        self._file_id = file_id
-        self.r_server.rpush(self.edits_key, 'nil')
-        self.r_server.set("current", self.file_id)
-
-    @staticmethod
-    def count():
-        count = Segment.r_server.get("count")
-        if count:
-            return count.decode()
-        else:
-            return "0"
+        self._seg_id = seg_id
+        self.r_server.set(Segment.CURRENT_KEY, self.seg_id)
 
     @staticmethod
-    def current():
-        current = Segment.r_server.get("current")
+    def get_count():
+        return Segment.r_server.llen(Segment.REDIS_KEY)
+
+    @staticmethod
+    def get_current():
+        current = Segment.r_server.get(Segment.CURRENT_KEY)
         if current:
             return current.decode()
         else:
-            return Segment.count()
+            return Segment.get_count()
 
     @staticmethod
-    def new(filename=SEGMENT_DEFAULT_FILENAME,
-            content=SEGMENT_DEFAULT_CONTENT):
+    def get_collection():
+        collection = []
+        for seg_id in Segment.get_all_seg_ids():
+            seg = Segment(seg_id)
+            collection.append(seg)
+        return collection
 
-        Segment.r_server.incr("count")
-        file_id = Segment.count()
-        new_seg = Segment(file_id)
-        Segment.r_server.set(new_seg.redis_key, filename)
-        Segment.r_server.rpush(new_seg.edits_key, content)
+    @staticmethod
+    def get_all_seg_ids():
+        return Segment.r_server.lrange(Segment.REDIS_KEY, 0, -1)
+
+    @staticmethod
+    def new(content=""):
+
+        count = Segment.get_count()
+        if count > 0:
+            seg_id = Segment.get_count() + 1
+        else:
+            seg_id = 1
+
+        new_seg = Segment(seg_id)
+        new_seg.add_edit(Segment.REDIS_NONE)
+        new_seg.add_edit(content)
+        Segment.r_server.lpush(Segment.REDIS_KEY, new_seg.seg_id)
+
         return new_seg
 
     @staticmethod
-    def open(file_id):
-        max_file_id = Segment.count()
-        if file_id <= max_file_id:
-            filename = Segment.r_server.get("file:" + file_id)
-            content = Segment.r_server.lindex("edits:" + file_id, -1)
-            return Segment.new(filename=filename, content=content)
+    def open(seg_id):
+        if seg_id in Segment.get_all_seg_ids():
+            return Segment(seg_id)
         else:
-            filename = SEGMENT_DEFAULT_FILENAME
-            content = ""
-            return Segment.new(filename=filename,content=content)
+            return Segment.new()
 
     @staticmethod
-    def save(file_id):
-        file_id = str(file_id)
-        filename = Segment.r_server.get("file:"+file_id)
-        content = Segment.r_server.lindex("edits:"+file_id, -1)
-        with open(filename, "w") as file:
-            file.write(content.decode())
-        return filename.decode()
+    def save():
+        Segment.r_server.bgsave()
+
+        filepath = Segment.FILEPATH
+        with open(filepath, mode='a') as f:
+            collection = Segment.get_collection()
+            for seg in collection:
+                f.write(seg.curr_edit)
+            Segment.r_server.set(Segment.FILEPATH_KEY, str(f))
 
     # properties, listed alphabetically
     @property
     def base_edit(self):
         base_edit = self.edits[0]
-        if base_edit != 'nil':
+        if base_edit != Segment.REDIS_NONE:
             return base_edit
         else:
             return None
@@ -88,10 +99,10 @@ class Segment:
     @property
     def curr_edit(self):
         curr_edit = self.edits[-1]
-        if curr_edit != 'nil':
+        if curr_edit != Segment.REDIS_NONE:
             return curr_edit
         else:
-            return "The edit queue is empty"
+            return None
 
     @property
     def edits(self):
@@ -101,28 +112,24 @@ class Segment:
 
     @property
     def edits_key(self):
-        return "edits:" + self.file_id
+        edits_key = Segment.EDITS_KEY + ":" + self.seg_id
+        return edits_key
 
     @property
-    def file_id(self):
-        return str(self._file_id)
+    def seg_id(self):
+        return str(self._seg_id)
 
     @property
-    def filename(self):
-        filename = self.r_server.get(self.redis_key)
-        return filename.decode()
+    def id_key(self):
+        return Segment.SEG_ID_KEY + ":" + self.seg_id
 
     @property
     def prev_edit(self):
         prev_edit = self.edits[-2]
-        if prev_edit != 'nil':
+        if prev_edit != Segment.REDIS_NONE:
             return prev_edit
         else:
             return None
-
-    @property
-    def redis_key(self):
-        return "file:" + self.file_id
 
     # Edit functions
     def add_edit(self, text):

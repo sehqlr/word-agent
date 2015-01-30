@@ -1,4 +1,8 @@
 count => number of files created, INCR by Segment.new()
 current => file_id of most recently init'd segment
-edits:[id] => linked list of edits, capped at EDITS_CAP
-file:[id] => filename
+filepath => string of compiled txt file
+
+edits:[id] => LL of edits, capped at EDITS_CAP
+segments => LL of file_ids, in order
+
+resource:name => { fields: values }

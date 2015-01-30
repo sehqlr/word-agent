@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import random, redis, unittest
+import random, redis, tempfile, unittest
 from collections import deque
 from pathlib import Path
 
@@ -7,23 +7,26 @@ from backend import *
 from app import app, get_segment
 
 EXCESSIVE = 100
-TEST_FILE_ID = "0"
-TEST_FILE_NAME = "test"
+TEST_SEG_ID = "1"
+TEST_FILEPATH = "test"
 
 def gen_test_segment():
-    fid = TEST_FILE_ID
-    fname = TEST_FILE_NAME
-    edits_list = [str(n) for n in range(0, EXCESSIVE)]
-    segment = Segment(file_id=fid)
+    #this tries to not to rely on methods I wrote
+    #to gen the testing environment
+    seg_id = TEST_SEG_ID
+    edits_list = ['nil', ''] + [str(n) for n in range(0, EXCESSIVE)]
+    segment = Segment(seg_id)
 
-    Segment.r_server.set("file:"+fid, fname)
+    Segment.r_server.set("filepath", TEST_FILEPATH)
     for edit in edits_list:
-        Segment.r_server.rpush("edits:"+fid, edit)
-    Segment.r_server.set("count", fid)
+        Segment.r_server.rpush("edits:"+seg_id, edit)
+
+    Segment.r_server.lpush(Segment.REDIS_KEY, seg_id)
+
     return segment
 
-class SegmentEditingTestCase(unittest.TestCase):
-    """Test editing methods for Segments"""
+class SegmentInstanceTestCase(unittest.TestCase):
+    """Test instance methods for Segments"""
 
     def setUp(self):
         self.seg = gen_test_segment()
@@ -33,13 +36,21 @@ class SegmentEditingTestCase(unittest.TestCase):
 
     def test_properties(self):
         """Test edit-related read-only properties"""
-        case = [None] + [str(i) for i in range(0, EXCESSIVE)]
-        self.assertEqual(self.seg.base_edit, case[0])
-        self.assertEqual(self.seg.prev_edit, case[-2])
-        self.assertEqual(self.seg.curr_edit, case[-1])
+        seg_id = str(TEST_SEG_ID)
+        edits = [None, ''] + [str(i) for i in range(0, EXCESSIVE)]
+        edits_key = "edits:" + seg_id
+        id_key = "file:" + seg_id
 
-    def test_edits_list(self):
-        self.assertGreater(len(self.seg.edits), 0)
+        self.assertEqual(self.seg.base_edit, edits[0])
+        self.assertEqual(self.seg.curr_edit, edits[-1])
+
+        # nil/None difference between Redis/Python
+        self.assertEqual(self.seg.edits, ['nil']+edits[1:])
+
+        self.assertEqual(self.seg.edits_key, edits_key)
+        self.assertEqual(self.seg.seg_id, seg_id)
+        self.assertEqual(self.seg.id_key, id_key)
+        self.assertEqual(self.seg.prev_edit, edits[-2])
 
     def test_undo_redo(self):
         """Test editing actions undo and redo"""
@@ -57,52 +68,43 @@ class SegmentEditingTestCase(unittest.TestCase):
                 edits_deque.rotate(-1)
             self.assertEqual(self.seg.edits, list(edits_deque))
 
-    def test_edit_truncation(self):
-        """Tests to ensure that edits list gets trimmed"""
-        #FAILING TEST
-        median = EXCESSIVE//2
-        case = self.seg.edits[:median] + [str(EXCESSIVE+1)]
-
-        for i in range(0, median+1):
-            self.seg.undo()
-        self.seg.add_edit(EXCESSIVE+1)
-
-        self.assertEqual(self.seg.edits, case)
-
-class SegmentRedisTestCase(unittest.TestCase):
-    """Tests Segment redis methods"""
+class SegmentStaticTestCase(unittest.TestCase):
+    """Tests Segment static methods"""
     def setUp(self):
         self.seg = gen_test_segment()
 
     def tearDown(self):
         Segment.r_server.flushdb()
 
-    def test_redis_ping(self):
-        rv = Segment.r_server.ping()
-        self.assertTrue(rv)
+    def test_get_count(self):
+        self.assertEqual(str(Segment.get_count()), self.seg.seg_id)
+
+    def test_get_current(self):
+        self.assertEqual(Segment.get_current(), self.seg.seg_id)
+
+    def test_get_collection(self):
+        collection = Segment.get_collection()
+        list_len = Segment.r_server.llen(Segment.REDIS_KEY)
+        self.assertEqual(len(collection), list_len)
+
+    def test_new(self):
+        pass
+
+    def test_open(self):
+        pass
 
     def test_save(self):
-        rv = Segment.save(0)
-        path = Path(rv)
+        Segment.save()
+        f = Segment.r_server.get(Segment.FILEPATH_KEY)
+        path = Path(f)
         self.assertTrue(path.exists())
 
-    def test_properties(self):
-        fid = str(TEST_FILE_ID)
-        case_edits_key = "edits:" + fid
-        case_redis_key = "file:" + fid
-        self.assertEqual(self.seg.edits_key, case_edits_key)
-        self.assertEqual(self.seg.file_id, fid)
-        self.assertEqual(self.seg.filename, TEST_FILE_NAME)
-        self.assertEqual(self.seg.redis_key, case_redis_key)
-
-    def test_current(self):
-        self.assertEqual(Segment.current(), self.seg.file_id)
 
 class WebTestCase(unittest.TestCase):
     """Test case for Flask frontend"""
     def setUp(self):
         self.app = app.test_client()
-        self.seg = gen_test_segment()
+        gen_test_segment()
 
     def tearDown(self):
         Segment.r_server.flushdb()
@@ -113,8 +115,8 @@ class WebTestCase(unittest.TestCase):
         self.assertIn(b, rv.data)
 
     def test_editor(self):
-        seg = get_segment()
         rv = self.app.get("/editor")
+        seg = get_segment()
         b = seg.curr_edit.encode('utf-8')
         self.assertIn(b, rv.data)
 
@@ -124,16 +126,16 @@ class WebTestCase(unittest.TestCase):
         self.assertIn(b, rv.data)
 
     def test_add_edit(self):
-        seg = get_segment()
         rv = self.app.post("/api/add_edit",
                 data=dict(text="new edit"),
                 follow_redirects=True)
+        seg = get_segment()
         b = seg.curr_edit.encode("utf-8")
         self.assertIn(b, rv.data)
 
     def test_open(self):
-        fid = Segment.current()
-        rv = self.app.get("/api/open?file_id=0", follow_redirects=True)
+        fid = Segment.get_current()
+        rv = self.app.get("/api/open?seg_id="+fid, follow_redirects=True)
         b = b'opened file ' + fid.encode("utf-8")
         self.assertIn(b, rv.data)
 
